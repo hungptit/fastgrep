@@ -1,87 +1,76 @@
 #include "fmt/format.h"
+#include <iostream>
 #include <string>
 
+#include "constraints.hpp"
 #include "ioutils.hpp"
-#include "rabbitmq.hpp"
+#include "parser.hpp"
+#include "scribe.hpp"
 #include <time.h>
 
-#define CATCH_CONFIG_MAIN
-#include "catch/catch.hpp"
+#include "boost/program_options.hpp"
 
-const std::string datafile("data.log");
-
-TEST_CASE("Basic tests", "") {
-    std::string buffer = ioutils::read<std::string>(datafile.c_str());
-    using Parser = rabbitmq::Parser;
-    using Container = typename Parser::Container;
-    using Iter = Container::const_iterator;
-    auto parser = Parser();
-    parser(buffer.begin(), buffer.end(), rabbitmq::AllPass());
-    REQUIRE(parser.messages.size() == 6);
-
-    // Print out parsed data
-    rabbitmq::print_messages<rabbitmq::All, Iter>(parser.messages.cbegin(), parser.messages.cend());
-
-    // Check the number of error and info messages.
-    size_t error(0), info(0);
-    for (auto const msg : parser.messages) {
-        info += msg.error_code == rabbitmq::ErrorCode::INFO;
-        error += msg.error_code == rabbitmq::ErrorCode::ERROR;
-    }
-
-    REQUIRE(info == 5);
-    REQUIRE(error == 1);
-    REQUIRE(parser.messages[0].error_code == rabbitmq::ErrorCode::INFO);
-    // REQUIRE(parser.messages[0].timestamp == 1516891170);
-    REQUIRE(parser.messages[0].message == "Adding mirror of queue "
-                                          "'aggregator.forward.WmnsIKwcGBEAAHOkAAAA5A' in vhost 'DB1' on "
-                                          "node rabbit@mq103: <22210.12697.3895>");
+namespace {
 }
 
-TEST_CASE("Parsing time strings", "Positive") {
-    rabbitmq::TimeParser parser("%Y-%m-%d %H:%M:%S");
-    std::time_t t = parser("2018-1-11 10:30:05");
-    rabbitmq::TimePrinter printer("%Y-%m-%d %H:%M:%S");
-    printer(t);
-    fmt::print("parsed time: {}\n", printer.buffer);
-    std::string expected_results("2018-01-11 10:30:05");
-    REQUIRE(expected_results == printer.buffer); // TODO: Need to normalize time.
-}
+int main(int argc, char *argv[]) {
+    namespace po = boost::program_options;
+    std::vector<std::string> logfiles;
+    std::string database;
+    po::options_description desc("Allowed options");
+    std::string begin_time, end_time;
+    std::string pool_pattern, server_pattern;
 
-TEST_CASE("Comparators", "Positive") {
-    rabbitmq::TimeParser parser("%Y-%m-%d %H:%M:%S");
-    std::time_t t1 = parser("2018-10-1 9:10:11");
-    std::time_t t2 = parser("2018-1-1 19:10:11");
-    std::time_t t3 = parser("2017-1-1 1:10:11");
+    // clang-format off
+    desc.add_options()
+        ("help,h", "Print this help")
+		("verbose,v", "Display verbose information i.e input arguments")
+		("info,i", "Display information messages.")
+		("error,e", "Display error messages.")
 
-    rabbitmq::TimePrinter printer("%Y-%m-%d %H:%M:%S");
+		("begin-time", po::value<std::string>(&begin_time), "Begin time in 'yyyy-mm-dd hh::mm::ss' format.")
+		("end-time", po::value<std::string>(&end_time), "End time in 'yyyy/mm/dd hh::mm::ss' format")
 
-    printer(t1);
-    fmt::print("t1 = {0} -> {1}\n", t1, printer.buffer);
+		("server", po::value<std::string>(&server_pattern), "Server name pattern")
+		("pool", po::value<std::string>(&pool_pattern), "Pool name pattern")
 
-    printer(t2);
-    fmt::print("t2 = {0} -> {1}\n", t2, printer.buffer);
+        ("log-files,f", po::value<std::vector<std::string>>(&logfiles), "RabbitMQ log files.")
+        ("database,d", po::value<std::string>(&database), "A database of rabbitmq logs");
+    // clang-format on
 
-    printer(t3);
-    fmt::print("t3 = {0} -> {1}\n", t3, printer.buffer);
+    // Parse input arguments
+    po::positional_options_description p;
+    p.add("log-files", -1);
+    po::variables_map vm;
+    po::store(po::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
+    po::notify(vm);
 
-    SECTION("Olderthan") {
-        rabbitmq::OlderThan cons1(t2);
-        REQUIRE(cons1(t1) == false);
-        REQUIRE(cons1(t3) == true);
+    if (vm.count("help")) {
+        std::cout << "Usage: scribe_parser [options]\n";
+        std::cout << desc;
+        std::cout << "\nExamples:\n";
+        std::cout << "\n  Display all error message:\n";
+        std::cout << "    parse_rabbitmq_log data.log --error\n";
+        std::cout << "\n  Display all info message:\n";
+        std::cout << "    scribe_parser data.log --info\n";
+        return EXIT_SUCCESS;
     }
 
-    SECTION("NewerThan") {
-        rabbitmq::NewerThan cons2(t2);
-        REQUIRE(cons2(t1) == true);
-        REQUIRE(cons2(t3) == false);
+    if (logfiles.empty()) {
+        std::cerr << "You must provide a scribe log file!\n";
+        return EXIT_FAILURE;
     }
 
-	SECTION("TimePeriod") {
-		rabbitmq::TimePeriod cons1(t3, t1);
-        REQUIRE(cons1(t2) == true);
-		
-		rabbitmq::TimePeriod cons2(t2, t1);
-        REQUIRE(cons2(t3) == false);
-	}
+    bool parse_error(vm.count("error"));
+    bool parse_info(vm.count("info"));
+
+	scribe::TimeAll tcons;
+	scribe::AllServers scons;
+	scribe::AllPools pcons;
+	
+	auto parser = scribe::BasicParser<decltype(tcons), decltype(scons), decltype(pcons)>(std::move(tcons), std::move(scons), std::move(pcons));
+    for (auto const afile : logfiles) {
+        std::string buffer = ioutils::read<std::string>(afile.c_str());
+        parser(buffer.begin(), buffer.end());
+    }
 }
