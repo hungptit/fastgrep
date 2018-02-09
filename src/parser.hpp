@@ -15,10 +15,6 @@ namespace scribe {
         for (; (iter != end) && (*iter != ch); ++iter) {}
         return iter;
     }
-    constexpr char EOL = '\n';
-    constexpr char SPACE = ' ';
-    constexpr char OPEN_SQUARE_BRAKET = '[';
-    constexpr char CLOSE_SQUARE_BRAKET = ']';
 
     // The basic parser will parse and filter messages using basic log
     // information such as timestamp, servername, and process id.

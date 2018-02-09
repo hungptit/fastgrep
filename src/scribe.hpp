@@ -11,7 +11,16 @@
 #include "timeutils.hpp"
 
 namespace scribe {
-
+	// Constants
+	constexpr char EOL = '\n';
+    constexpr char SPACE = ' ';
+	constexpr char COMMA = ',';
+	constexpr char COMMA1 = ';';
+	constexpr char PERIOD = '.';
+    constexpr char OPEN_SQUARE_BRAKET = '[';
+    constexpr char CLOSE_SQUARE_BRAKET = ']';
+	
+	
     // This class hold a look up table for string.
     // Note: This class is not threadsafe.
     template <typename T1, typename T2 = size_t> struct LookupTable {
@@ -76,7 +85,7 @@ namespace scribe {
 
     // Will be used to analyze message life cycle.
     struct MessageStatus {
-        std::array<unsigned char, 8> life_cycles;
+        std::array<int8_t, 8> life_cycles;
         std::array<char, 22> message_id; // MessageID is a 22 character string.
     };
 

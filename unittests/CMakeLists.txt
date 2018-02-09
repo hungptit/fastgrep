@@ -102,7 +102,7 @@ set(LIB_PROGRAM_OPTIONS "${ROOT_DIR}/lib/libboost_program_options.a")
 
 # Build all
 if (Boost_FOUND) 
-  set(COMMAND_SRC_FILES parser experiments)
+  set(COMMAND_SRC_FILES parser experiments test_read)
   foreach (src_file ${COMMAND_SRC_FILES})
 	ADD_EXECUTABLE(${src_file} ${src_file}.cpp)
 	TARGET_LINK_LIBRARIES(${src_file})
