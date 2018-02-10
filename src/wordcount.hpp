@@ -9,15 +9,17 @@ namespace scribe {
         size_t byte_count;
     };
 
+	// A fun class which can be used to count lines, words, and size of a file.
+	template <size_t BUFFER_SIZE>
     class WordCount {
       public:
-        FileStats operator()(const std::string &datafile) {
+        FileStats operator()(const char * datafile) {
             FileStats stats;
             size_t byte_count = 0;
             size_t line_count = 0;
             size_t word_count = 0;
 
-            int fd = ::open(datafile.c_str(), O_RDONLY);
+            int fd = ::open(datafile, O_RDONLY);
 
             // Check that we can open a given file.
             if (fd < 0) {
@@ -73,8 +75,6 @@ namespace scribe {
     private:
         // Constants
         static constexpr char EOL = '\n';
-        static constexpr char SPACE = ' ';
-        static constexpr size_t BUFFER_SIZE = 1 << 16;
 
         // Temporary read buffer.
         std::array<char, BUFFER_SIZE> read_buffer;
