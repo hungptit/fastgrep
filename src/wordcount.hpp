@@ -1,6 +1,7 @@
 #pragma once
 
 #include "scribe.hpp"
+#include "unistd.h"
 
 namespace scribe {
     struct FileStats {
@@ -9,16 +10,15 @@ namespace scribe {
         size_t byte_count;
     };
 
-	// A fun class which can be used to count lines, words, and size of a file.
-	template <size_t BUFFER_SIZE>
-    class WordCount {
+    // A fun class which can be used to count lines, words, and size of a file.
+    template <size_t BUFFER_SIZE> class WordCount {
       public:
-        FileStats operator()(const char * datafile) {
-            FileStats stats;
+        FileStats operator()(const char *datafile) {
             size_t byte_count = 0;
             size_t line_count = 0;
             size_t word_count = 0;
 
+            char read_buffer[BUFFER_SIZE + 1];
             int fd = ::open(datafile, O_RDONLY);
 
             // Check that we can open a given file.
@@ -28,14 +28,13 @@ namespace scribe {
                 throw(std::runtime_error(writer.str()));
             }
 
-            // Reserve the size of a buffer using file size information.
-            struct stat file_stat;
-            if (fstat(fd, &file_stat) < 0) return stats;
+            // Tell the kernel that we will read the current file sequentially.
+            // fdadvise (fd, 0, 0, FADVISE_SEQUENTIAL);
 
             // Read data into a string
             int start = 0;
             while (true) {
-                auto nbytes = ::read(fd, &read_buffer[0], BUFFER_SIZE);
+                auto nbytes = ::read(fd, read_buffer, BUFFER_SIZE);
                 if (nbytes < 0) {
                     fmt::MemoryWriter writer;
                     writer << "Cannot read file \"" << datafile << "\"";
@@ -44,22 +43,17 @@ namespace scribe {
 
                 // Update the number of read bytes, lines, and words.
                 byte_count += nbytes;
-                for (auto idx = 0; idx < nbytes; ++idx) {
-                    // Increate line_count if we see any EOL chacter. We also
-                    // need to update the current word count.
-                    if (read_buffer[idx] == EOL) {
-                        ++line_count;
-                        (idx > start) ? (++word_count, start = idx) : (start = idx);
-                    }
+                char *ptr = read_buffer;
+                char *end = read_buffer + nbytes;
 
-                    // Update word_count;
-                    if (read_buffer[idx] == SPACE) {
-                        (idx > start) ? (++word_count, start = idx) : (start = idx);
-                    }
+                // Use memchr to find for a character because we know that our log line is long enough.
+                while ((ptr = static_cast<char *>(memchr(ptr, '\n', end - ptr)))) {
+                    ++ptr;
+                    ++line_count;
                 }
-
-                // If there are character left then we set start to be negative number otherwise set it to
-                // 0.
+                // If there are character left then we set start to be negative
+                // number which is the number of chracters of the current line
+                // otherwise reset it to 0.
                 start -= nbytes - 1;
 
                 // Stop if we reach the end of file.
@@ -72,11 +66,7 @@ namespace scribe {
             return {line_count, word_count, byte_count};
         }
 
-    private:
-        // Constants
+      private:
         static constexpr char EOL = '\n';
-
-        // Temporary read buffer.
-        std::array<char, BUFFER_SIZE> read_buffer;
     };
 } // namespace scribe

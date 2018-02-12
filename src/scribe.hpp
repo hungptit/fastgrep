@@ -78,7 +78,7 @@ namespace scribe {
 
     // The body of the Scribe log message.
     struct ScribeBody {
-        MessageType typpe;
+        MessageType type;
         size_t msgid;
         std::string data;
     };
