@@ -32,7 +32,6 @@ namespace scribe {
             // fdadvise (fd, 0, 0, FADVISE_SEQUENTIAL);
 
             // Read data into a string
-            int start = 0;
             while (true) {
                 auto nbytes = ::read(fd, read_buffer, BUFFER_SIZE);
                 if (nbytes < 0) {
@@ -51,10 +50,6 @@ namespace scribe {
                     ++ptr;
                     ++line_count;
                 }
-                // If there are character left then we set start to be negative
-                // number which is the number of chracters of the current line
-                // otherwise reset it to 0.
-                start -= nbytes - 1;
 
                 // Stop if we reach the end of file.
                 if (nbytes != static_cast<decltype(nbytes)>(BUFFER_SIZE)) { break; };
