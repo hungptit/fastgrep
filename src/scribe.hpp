@@ -74,6 +74,7 @@ namespace scribe {
         std::time_t timestamp;
         unsigned int pool_id;
         unsigned int server_id;
+		size_t pid;
     };
 
     // The body of the Scribe log message.

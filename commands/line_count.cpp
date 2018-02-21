@@ -12,10 +12,17 @@
 #include <time.h>
 
 int main(int argc, char *argv[]) {
-    scribe::WordCount<1 << 16> parser;
+    // scribe::WordCount<1 << 16> parser;
+    // utils::ElapsedTime<utils::SECOND> timer;
+    // for (auto idx = 1; idx < argc; ++idx) {
+    //     auto stats = parser(argv[idx]);
+    //     fmt::print("{0} => lines: {1}, bytes: {2}\n", argv[idx], stats.line_count, stats.byte_count);
+    // }
+
+    scribe::FileReader<1 << 16, scribe::LineParser> parser;
     utils::ElapsedTime<utils::SECOND> timer;
     for (auto idx = 1; idx < argc; ++idx) {
-        auto stats = parser(argv[idx]);
-        fmt::print("{0} => lines: {1}, bytes: {2}\n", argv[idx], stats.line_count, stats.byte_count);
+        auto info = parser(argv[idx]);
+		info.print(argv[idx]);
     }
 }

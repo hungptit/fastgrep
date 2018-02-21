@@ -30,11 +30,11 @@ include(CXXFeatureCheck)
 # set(CMAKE_CXX_COMPILER "clang++")
 # add_cxx_compiler_flag(-stdlib=libc++)
 
-# set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_BUILD_TYPE Debug)
 
-set (CMAKE_BUILD_TYPE Release)
-add_cxx_compiler_flag(-O3)
-add_cxx_compiler_flag(-march=native)
+# set (CMAKE_BUILD_TYPE Release)
+# add_cxx_compiler_flag(-O3)
+# add_cxx_compiler_flag(-march=native)
 
 add_cxx_compiler_flag(-std=c++14)
 add_cxx_compiler_flag(-Wall)
@@ -102,7 +102,7 @@ set(LIB_PROGRAM_OPTIONS "${ROOT_DIR}/lib/libboost_program_options.a")
 
 # Build all
 if (Boost_FOUND) 
-  set(COMMAND_SRC_FILES scribe_parser line_count)
+  set(COMMAND_SRC_FILES scribe_parser line_count message_filter)
   foreach (src_file ${COMMAND_SRC_FILES})
 	ADD_EXECUTABLE(${src_file} ${src_file}.cpp)
 	TARGET_LINK_LIBRARIES(${src_file}  ${Boost_LIBRARIES} ${LIB_JEMALLOC} -lpthread -ldl)
