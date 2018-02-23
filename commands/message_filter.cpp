@@ -8,7 +8,7 @@
 #include "parser_array.hpp"
 #include "scribe.hpp"
 #include "timer.hpp"
-#include "wordcount.hpp"
+
 #include "producer.hpp"
 #include <time.h>
 
