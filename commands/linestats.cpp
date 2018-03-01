@@ -10,6 +10,6 @@
 int main(int argc, char *argv[]) {
     scribe::FileReader<1 << 16, scribe::LineStats> parser;
     scribe::LineStats stats;
-    for (auto idx = 1; idx < argc; ++idx) { parser(argv[idx], std::move(stats)); }
+    for (auto idx = 1; idx < argc; ++idx) { parser(argv[idx], stats); }
     stats.print("Summary:");
 }
