@@ -53,8 +53,11 @@ int main(int argc, char *argv[]) {
     scribe::ScribeMessagePattern search_patterns(params.pattern);
 
     // Search for desired patterns in a list of log files.
-    using Parser = scribe::MessageFilter;
-    scribe::FileReader<1 << 16, scribe::MessageFilter> message_filter;
-    Parser parser(time_constraints, search_patterns);
-    for (auto afile : log_files) { message_filter(afile.c_str(), parser); }
+    using MessageFilter = typename scribe::MessageFilter<scribe::Patterns>;
+	// scribe::AllMessages all;
+	scribe::Patterns patt(std::string("Starting"));
+	
+	MessageFilter filter(std::move(patt));
+    scribe::FileReader<1 << 16, MessageFilter> parser;
+    for (auto afile : log_files) { parser(afile.c_str(), filter); }
 }

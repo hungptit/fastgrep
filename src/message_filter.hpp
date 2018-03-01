@@ -16,7 +16,7 @@ namespace scribe {
             struct tm tm;
             const char *ts = &timestamp[0];
             strptime(ts, "%Y-%m-%d %H:%M:%S", &tm);
-			tm.tm_isdst = 0; // TODO: Disable day light time saving for now.
+            tm.tm_isdst = 0; // TODO: Disable day light time saving for now.
             return mktime(&tm);
         }
 
@@ -74,7 +74,7 @@ namespace scribe {
             }
             memcpy(buffer, begin, BUFFER_SIZE);
             strptime(buffer, "%m/%d/%Y %H:%M:%S", &tm);
-			tm.tm_isdst = 0; // TODO: Disable day light time saving for now.
+            tm.tm_isdst = 0; // TODO: Disable day light time saving for now.
             std::time_t t = mktime(&tm);
             // fmt::print("Timestamp: {}\n", get_timestamp(t));
             return t;
@@ -91,129 +91,63 @@ namespace scribe {
         struct tm tm;
     };
 
-    class MessageFilter {
+    struct AllMessages {
+        template <typename String> bool operator()(const String &) { return true; }
+    };
+
+    class Patterns {
       public:
-        using HeaderConstraint = ScribeHeaderTimeConstraints;
-        using MessageConstraint = ScribeMessagePattern;
-        MessageFilter() = default;
-        MessageFilter(const HeaderConstraint &c1, const MessageConstraint &c2)
-            : time_constraint(c1), search_pattern(c2) {}
+		using String = std::string;
+        Patterns(const String &patt) : pattern(patt){};
+        bool operator()(const String &buffer) {
+			return buffer.find(pattern) != String::npos; }
+
+      private:
+        String pattern;
+    };
+
+    template <typename Constraint> class MessageFilter {
+      public:
+        MessageFilter(Constraint &&cons)
+            : buffer(), lines(0), constraints(std::forward<Constraint>(cons)) {}
         MessageFilter(const MessageFilter &value) = delete; // We do not support copy constructor.
         ~MessageFilter() {
-            // Need to parse leftover data.
-			if (search_pattern(buffer) && buffer.size() > 20) {
-				const char *begin = &buffer[0];
-				parse(begin, begin + buffer.size() - 1);
-			}
+            if (!buffer.empty()) print();
         }
 
         void operator()(const char *begin, const char *end) {
-			char *start = begin;
-			const char *ptr = begin;
-
-			// Parse line by line
-			while ((ptr = static_cast<const char *>(memchr(ptr, EOL, end - ptr)))) {
-				buffer.append(start, ptr - start + 1);
-				
-				// Increase line counter
-				++lines;
-				
-				// Parse the data
-				fmt::print("{0}: {1}", lines, buffer);
-
-				// Reset the line buffer
-				buffer.clear();
-				if ((ptr + 1) != end) {
-					
-				}
-			}
-			
-			
-            const char *ptr = static_cast<const char *>(memrchr(begin, EOL, end - begin));
-            if (ptr && ((buffer.size() + ptr) > (begin + MAX_SIZE))) {
-                // Filter messages based on user's constraints such as time,
-                // string pattern, and server name etc
-                buffer.append(begin, ptr - begin);
-
-				// Only parse the buffer if the search pattern is found.
-				if (search_pattern(buffer)) {
-                    const char *begin = &buffer[0];
-                    parse(begin, begin + buffer.size() - 1);
-                }
-
-                buffer.clear();
-                buffer.append(ptr, end - ptr);
-            }
-
-            // This line is long we only need to copy data to the string buffer.
-            buffer.append(begin, end - begin);
-        }
-
-        // Parse data from multiple lines. The fist character will be an
-        // OPEN_SQUARE_BRACKET character and last character might be an EOL
-        // character.
-        void parse(const char *begin, const char *end) {
-            ParseScribeTimestamp time_parser;
-            const char *ptr = begin;
             const char *start = begin;
+            const char *ptr = begin;
 
-			// Find the beginning of a line
-			ptr = static_cast<const char *>(memchr(ptr, OPEN_SQUARE_BRACKET, end - ptr));
-			if (!ptr) {
-				fmt::MemoryWriter writer;
-                std::string msg(begin, end - begin);
-                writer << "The first character of any line must be [. ";
-                writer << std::string(begin, end - begin);
-                throw(std::runtime_error(writer.str()));
-                return;
-			}
-			
-			// Parse scribe messages
-            while (ptr != end) {
-                // Find the end of the message header
-                ptr = static_cast<const char *>(memchr(ptr, CLOSE_SQUARE_BRACKET, end - ptr));
+            // Parse line by line
+            while ((ptr = static_cast<const char *>(memchr(ptr, EOL, end - ptr)))) {
+                buffer.append(start, ptr - start + 1);
 
-                if (!ptr) {
-                    fmt::MemoryWriter writer;
-                    writer << "Could not find the end of the message header. ";
-                    writer << std::string(start, end - start);
-                    throw(std::runtime_error(writer.str()));
-                }
+                // Increase line counter
+                ++lines;
 
-                fmt::print("Header: {}\n", std::string(start, ptr - start - 1));
-                std::time_t t = time_parser(start + 1, ptr);
-                bool isok = time_constraint(t);
+                // Parse the data
+                print();
 
-                // Move the the end of line
-                ptr = static_cast<const char *>(memchr(ptr, EOL, end - ptr));
-                if (!ptr) {
-                    // We either read the end of a file or have an invalid line.
-                    if (isok) { print(start, end); }
-                    return;
-                }
-
-                // Print out the full message body.
-				if (isok) { print(start, ptr); }
-                
-                // Move to the next line
+                // Update start
                 start = ++ptr;
-            }
-        }
 
-        void print(const char *begin, const char *end) {
-			if (end == begin) return;
-            // fmt::print("{}", std::string(begin, end - begin));
+                // Stop if we reach the end of buffer.
+                if (start == end) break;
+            }
+
+            // Update line buffer with leftover data.
+            if (start != end) { buffer.append(start, end - start); }
         }
 
       private:
-		size_t lines;
-        HeaderConstraint time_constraint;
-        MessageConstraint search_pattern;
         std::string buffer;
-        static constexpr size_t MAX_SIZE = 1 << 20;
-        static constexpr char EOL = '\n';
-        static constexpr char SPACE = ' ';
-        static constexpr char OPEN_SQUARE_BRACKET = '[';
-        static constexpr char CLOSE_SQUARE_BRACKET = ']';
+        size_t lines;
+        Constraint constraints;
+
+        void print() {
+            if (constraints(buffer)) { fmt::print("Line {0} --> {1}", lines, buffer); }
+            buffer.clear(); // Reset the buffer.
+        }
     };
 } // namespace scribe
