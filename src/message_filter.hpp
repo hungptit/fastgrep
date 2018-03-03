@@ -4,6 +4,8 @@
 #include <sstream>
 #include <vector>
 
+#include "folly/FBString.h"
+
 namespace scribe {
     struct FilterParams {
         FilterParams(const std::string &start_time, const std::string &stop_time, const std::string &patt) {
@@ -97,6 +99,7 @@ namespace scribe {
 
     class Patterns {
       public:
+		// using String = folly::fbstring;
 		using String = std::string;
         Patterns(const String &patt) : pattern(patt){};
         bool operator()(const String &buffer) {
@@ -108,6 +111,8 @@ namespace scribe {
 
     template <typename Constraint> class MessageFilter {
       public:
+		using String = std::string;
+		// using String = folly::fbstring;
         MessageFilter(Constraint &&cons)
             : buffer(), lines(0), constraints(std::forward<Constraint>(cons)) {}
         MessageFilter(const MessageFilter &value) = delete; // We do not support copy constructor.
@@ -141,12 +146,13 @@ namespace scribe {
         }
 
       private:
-        std::string buffer;
+        String buffer;
         size_t lines;
         Constraint constraints;
 
         void print() {
-            if (constraints(buffer)) { fmt::print("Line {0} --> {1}", lines, buffer); }
+            if (constraints(buffer)) { // fmt::print("Line {0} --> {1}", lines, buffer);
+			}
             buffer.clear(); // Reset the buffer.
         }
     };
