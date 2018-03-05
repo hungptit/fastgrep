@@ -97,6 +97,7 @@ namespace scribe {
         template <typename String> bool operator()(const String &) { return true; }
     };
 
+	// Search for a pattern.
     class Patterns {
       public:
 		// using String = folly::fbstring;
@@ -109,6 +110,7 @@ namespace scribe {
         String pattern;
     };
 
+	// Filter message that match given constraints.
     template <typename Constraint> class MessageFilter {
       public:
 		using String = std::string;
@@ -151,7 +153,7 @@ namespace scribe {
         Constraint constraints;
 
         void print() {
-            if (constraints(buffer)) { // fmt::print("Line {0} --> {1}", lines, buffer);
+            if (constraints(buffer)) { fmt::print("Line {0} --> {1}", lines, buffer);
 			}
             buffer.clear(); // Reset the buffer.
         }
