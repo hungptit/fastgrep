@@ -97,24 +97,21 @@ namespace scribe {
         template <typename String> bool operator()(const String &) { return true; }
     };
 
-	// Search for a pattern.
-    class Patterns {
+    // Search for a pattern.
+    template <typename String> class Patterns {
       public:
-		// using String = folly::fbstring;
-		using String = std::string;
         Patterns(const String &patt) : pattern(patt){};
-        bool operator()(const String &buffer) {
-			return buffer.find(pattern) != String::npos; }
+        bool operator()(String &&buffer) { return buffer.find(pattern) != String::npos; }
 
       private:
         String pattern;
     };
 
-	// Filter message that match given constraints.
-    template <typename Constraint> class MessageFilter {
+    // Filter message that match given constraints.
+    template <typename Constraint, typename String> class MessageFilter {
       public:
-		using String = std::string;
-		// using String = folly::fbstring;
+        // using String = std::string;
+        // using String = folly::fbstring;
         MessageFilter(Constraint &&cons)
             : buffer(), lines(0), constraints(std::forward<Constraint>(cons)) {}
         MessageFilter(const MessageFilter &value) = delete; // We do not support copy constructor.
@@ -153,8 +150,7 @@ namespace scribe {
         Constraint constraints;
 
         void print() {
-            if (constraints(buffer)) { fmt::print("Line {0} --> {1}", lines, buffer);
-			}
+            if (constraints(std::move(buffer))) { fmt::print("{}", buffer.data()); }
             buffer.clear(); // Reset the buffer.
         }
     };

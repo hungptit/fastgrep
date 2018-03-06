@@ -46,17 +46,18 @@ int main(int argc, char *argv[]) {
 
     if (vm.count("verbose")) params.print();
 
-    // Construct time constraints
-    scribe::ScribeHeaderTimeConstraints time_constraints(params.start, params.stop);
+    // // Construct time constraints
+    // scribe::ScribeHeaderTimeConstraints time_constraints(params.start, params.stop);
 
-    // Construct search constraints
-    scribe::ScribeMessagePattern search_patterns(params.pattern);
+    // // Construct search constraints
+    // scribe::ScribeMessagePattern search_patterns(params.pattern);
 
     // Search for desired patterns in a list of log files.
-    using MessageFilter = typename scribe::MessageFilter<scribe::Patterns>;
+	using String = std::string;
+	using Patterns = scribe::Patterns<String>;
+    using MessageFilter = typename scribe::MessageFilter<Patterns, String>;
 	// scribe::AllMessages all;
-	scribe::Patterns patt(pattern);
-	
+	Patterns patt(pattern);
 	MessageFilter filter(std::move(patt));
     scribe::FileReader<1 << 16, MessageFilter> message_filter;
     for (auto afile : log_files) { message_filter(afile.c_str(), filter); }
