@@ -53,9 +53,10 @@ int main(int argc, char *argv[]) {
     // scribe::ScribeMessagePattern search_patterns(params.pattern);
 
     // Search for desired patterns in a list of log files.
-	// using String = std::string;
-	using String = folly::fbstring;
+	using String = std::string;
+	// using String = folly::fbstring;
 	using Patterns = scribe::Patterns<String>;
+	// using Patterns = scribe::Patterns_fast<String>;
     using MessageFilter = typename scribe::MessageFilter<Patterns, String>;
 	// scribe::AllMessages all;
 	Patterns patt(pattern);

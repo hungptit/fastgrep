@@ -101,8 +101,31 @@ namespace scribe {
     template <typename String> class Patterns {
       public:
         Patterns(const String &patt) : pattern(patt){};
-        bool operator()(String &&buffer) { return buffer.find(pattern) != String::npos; }
+        bool operator()(const String &buffer) { return buffer.find(pattern) != String::npos; }
 
+      private:
+        String pattern;
+    };
+
+    template <typename String> class Patterns_fast {
+      public:
+        Patterns_fast(const String &patt) : pattern(patt){};
+
+        bool operator()(const char *begin, const char *end) {
+			const char *ptr = begin;
+			const char *pattern_begin = &pattern[0];
+			const char *pattern_end = pattern_begin + pattern.size();
+			const char begin_char = pattern_begin[0];
+			const size_t N = pattern.size();
+			while ((ptr = static_cast<const char *>(memchr(ptr, begin_char, end - ptr)))) {
+				if (strncmp(ptr, pattern_begin, N) == 0) {
+					return true;
+				}
+				++ptr;
+			}
+			return false;
+		}
+		
       private:
         String pattern;
     };
@@ -112,8 +135,9 @@ namespace scribe {
       public:
         // using String = std::string;
         // using String = folly::fbstring;
-        MessageFilter(Constraint &&cons)
-            : buffer(), lines(0), constraints(std::forward<Constraint>(cons)) {}
+        MessageFilter(Constraint &&cons) : buffer(), lines(0), constraints(std::forward<Constraint>(cons)) {
+            buffer.reserve(1 << 12);
+        }
         MessageFilter(const MessageFilter &value) = delete; // We do not support copy constructor.
         ~MessageFilter() {
             if (!buffer.empty()) print();
@@ -150,7 +174,10 @@ namespace scribe {
         Constraint constraints;
 
         void print() {
-            if (constraints(std::move(buffer))) { fmt::print("{}", buffer.data()); }
+			const char *begin = &buffer[0];
+			const char *end = &buffer[0] + buffer.size();
+            if (constraints(buffer)) { fmt::print("{}", buffer.data()); }
+            // if (constraints(begin, end)) { fmt::print("{}", buffer.data()); }
             buffer.clear(); // Reset the buffer.
         }
     };
