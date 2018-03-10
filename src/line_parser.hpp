@@ -16,10 +16,11 @@ namespace scribe {
                 ++lines;
 
                 // Update the max and min line length.
-                const size_t len = file_size + ptr - begin - current_eol - 1;
-                max_len = std::max(max_len, len);
-                min_len = std::min(min_len, len);
-                current_eol = file_size + ptr - begin;
+				const size_t new_eol = file_size + ptr - begin;
+                const size_t len = new_eol - current_eol - 1;
+                max_len = len > max_len ? len : max_len;
+                min_len = len < min_len ? len : min_len;
+                current_eol = new_eol;
 
                 // Move to the next character.
                 ++ptr;

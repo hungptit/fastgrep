@@ -1,0 +1,42 @@
+* Possible fields:
+  + LEVEL: info, warn, error
+  + MESSAGE:
+  + PREFIX:
+  + RAW_ERROR: Only see this if LEVEL=error
+  + SUBJECT: publish, publisherror
+
+* Tasks
+** Loop thought all log files and find all possible field name.
+   + Extract JSON string.
+   + Parse JSON string and update possible key list.
+** Data structure for scribe log
+*** Message 
+*** ScribeHeader
+** Multi-threaded log parser.
+*** Producer
+	+ Read trunk of data 
+	+ Detect the last EOL and pass data to the consumer. Might need to push data into a queue?
+*** Consumers
+    + Pop data off queue.
+	+ Parse data and keep informat that we need.
+	+ Update the results (shared data)
+*** Store data
+	+ Store data into NoSQL database.
+	+ Column: date_hour
+	+ Key: Message IDs.
+	+ Need to have a cache information for message ids.
+** Check message life cycle
+   + Parse incomming messages.
+   + Update message lifecycle table. A vector + a hash table.
+   + Print out summary information.
+   + Print out outlier.
+** Use ApacheThrift to comunicate between workers and master.
+*** Master 
+	+ Receive request from clients.
+	+ Analyze request and send it to the right worker.
+	+ Aggregate results and send back to the clients.
+*** Workers
+	+ Get the command from the master.
+	+ Execute the command.
+* How to search for a substring efficiently
+** 
