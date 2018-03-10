@@ -11,7 +11,7 @@ namespace scribe {
         Parser operator()(const char *datafile, Parser &&parser) {
             char read_buffer[BUFFER_SIZE + 1];
             int fd = ::open(datafile, O_RDONLY);
-			
+
             // Check that we can open a given file.
             if (fd < 0) {
                 std::stringstream writer;
