@@ -1,20 +1,19 @@
 #pragma once
-#include <string>
-#include <time.h>
 #include <stdlib.h>
+#include <time.h>
 
-namespace {
+namespace scribe {
     struct MessageHeader {
         std::time_t timestamp; // Timestamp: 03/08/2018 23::00:50
         char server[32];       // A server address: job1120.domain_name.com
         char pool[40];         // A job pool name i.e job.pool.name
-        unsigned long pid;     // This is a process id
+        int pid;			   // This is a process id
     };
 
     // Parse timestamp.
-    class TimestampParser {
+    class ScribeTimestampParser {
       public:
-        TimestampParser() noexcept {
+        ScribeTimestampParser() noexcept {
             tm.tm_isdst = 0; // We skip day light time saving for now.
         }
 
@@ -22,13 +21,13 @@ namespace {
         std::time_t operator()(const char *begin) {
             const char *ptr = begin;
 
-            tm.tm_mon = parse_two_digits(ptr);
+            tm.tm_mon = parse_two_digits(ptr) - SHIFT_MONTH;
             ptr += 3;
 
             tm.tm_mday = parse_two_digits(ptr);
             ptr += 3;
 
-            tm.tm_year = parse_four_digits(ptr);
+            tm.tm_year = parse_four_digits(ptr) - SHIFT_YEAR;
 
             ptr += 5;
             tm.tm_hour = parse_two_digits(ptr);
@@ -39,6 +38,7 @@ namespace {
             ptr += 3;
             tm.tm_sec = parse_two_digits(ptr);
 
+			tm.tm_isdst = 0;
             return mktime(&tm);
         }
 
@@ -51,12 +51,14 @@ namespace {
             const char *ptr = begin;
             return ptr[0] * 1000 + ptr[1] * 100 + ptr[2] * 10 + ptr[3] - SHIFT_4;
         }
-		
+
       private:
         struct tm tm;
         static constexpr char ZERO = '0';
         static constexpr int SHIFT_2 = ZERO * 11;
         static constexpr int SHIFT_4 = ZERO * 1111;
+        static constexpr int SHIFT_YEAR = 1900;
+        static constexpr int SHIFT_MONTH = 1;
     };
 
     // Parser the scribe message header.
@@ -88,7 +90,7 @@ namespace {
         }
 
       private:
-        TimestampParser time_parser;
+        ScribeTimestampParser time_parser;
         static constexpr char SPACE = ' ';
     };
-} // namespace
+} // namespace scribe
