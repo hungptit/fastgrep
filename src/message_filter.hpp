@@ -4,6 +4,8 @@
 #include <sstream>
 #include <vector>
 
+#include "header_parser.hpp"
+
 #include "folly/FBString.h"
 
 namespace scribe {
@@ -97,7 +99,7 @@ namespace scribe {
         template <typename String> bool operator()(const String &) { return true; }
     };
 
-    // Search for a pattern.
+    // Search for a pattern using string::find.
     template <typename String> class Patterns {
       public:
         Patterns(const String &patt) : pattern(patt){};
@@ -174,10 +176,7 @@ namespace scribe {
         Constraint constraints;
 
         void print() {
-			const char *begin = &buffer[0];
-			const char *end = &buffer[0] + buffer.size();
             if (constraints(buffer)) { fmt::print("{}", buffer.data()); }
-            // if (constraints(begin, end)) { fmt::print("{}", buffer.data()); }
             buffer.clear(); // Reset the buffer.
         }
     };

@@ -82,8 +82,6 @@ set(LIB_JEMALLOC "${EXTERNAL_DIR}/lib/libjemalloc.a")
 # Include folder
 include_directories ("${EXTERNAL_DIR}/include")
 include_directories ("${ROOT_DIR}/src")
-include_directories ("${ROOT_DIR}/../ioutils/src")
-include_directories ("${ROOT_DIR}/../utils/src")
 
 # This option make sure that we use the local boost version. Note that if the
 # system boost is installed then CMake might use that boost version.
@@ -101,11 +99,9 @@ find_package(Boost REQUIRED date_time system filesystem iostreams program_option
 set(LIB_PROGRAM_OPTIONS "${ROOT_DIR}/lib/libboost_program_options.a")
 
 # Build all
-if (Boost_FOUND) 
-  set(COMMAND_SRC_FILES parser experiments test_read)
-  foreach (src_file ${COMMAND_SRC_FILES})
-	ADD_EXECUTABLE(${src_file} ${src_file}.cpp)
-	TARGET_LINK_LIBRARIES(${src_file})
-	ADD_TEST(${src_file} ./${src_file})
-  endforeach (src_file)
-endif (Boost_FOUND)
+set(COMMAND_SRC_FILES parser experiments test_read scribe)
+foreach (src_file ${COMMAND_SRC_FILES})
+  ADD_EXECUTABLE(${src_file} ${src_file}.cpp)
+  TARGET_LINK_LIBRARIES(${src_file})
+  ADD_TEST(${src_file} ./${src_file})
+endforeach (src_file)

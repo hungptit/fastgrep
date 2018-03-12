@@ -7,7 +7,7 @@
 #include "constraints.hpp"
 #include "scribe.hpp"
 
-#include "timeutils.hpp"
+#include "utils/timeutils.hpp"
 
 namespace scribe {
     template <typename Iter> Iter find(Iter begin, Iter end, const char ch) {
