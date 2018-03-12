@@ -1,7 +1,8 @@
 #pragma once
 
-#include "scribe.hpp"
+#include "fmt/format.h"
 #include "unistd.h"
+#include <limits>
 
 namespace scribe {
     // A simple parser which computes the file size, the number of lines, and
@@ -16,7 +17,7 @@ namespace scribe {
                 ++lines;
 
                 // Update the max and min line length.
-				const size_t new_eol = file_size + ptr - begin;
+                const size_t new_eol = file_size + ptr - begin;
                 const size_t len = new_eol - current_eol - 1;
                 max_len = len > max_len ? len : max_len;
                 min_len = len < min_len ? len : min_len;

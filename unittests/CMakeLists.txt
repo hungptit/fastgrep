@@ -83,21 +83,6 @@ set(LIB_JEMALLOC "${EXTERNAL_DIR}/lib/libjemalloc.a")
 include_directories ("${EXTERNAL_DIR}/include")
 include_directories ("${ROOT_DIR}/src")
 
-# This option make sure that we use the local boost version. Note that if the
-# system boost is installed then CMake might use that boost version.
-set(Boost_USE_STATIC_LIBS ON)
-set(Boost_USE_MULTITHREADED ON)
-set(Boost_USE_STATIC_RUNTIME OFF)
-set(Boost_NO_SYSTEM_PATHS TRUE)
-if (Boost_NO_SYSTEM_PATHS)
-  set(BOOST_ROOT "${EXTERNAL_DIR}")
-  set(BOOST_INCLUDE_DIRS "${BOOST_ROOT}/include")
-  set(BOOST_LIBRARY_DIRS "${BOOST_ROOT}/lib")
-endif (Boost_NO_SYSTEM_PATHS)
-# message(${BOOST_ROOT})
-find_package(Boost REQUIRED date_time system filesystem iostreams program_options)
-set(LIB_PROGRAM_OPTIONS "${ROOT_DIR}/lib/libboost_program_options.a")
-
 # Build all
 set(COMMAND_SRC_FILES parser experiments test_read scribe)
 foreach (src_file ${COMMAND_SRC_FILES})

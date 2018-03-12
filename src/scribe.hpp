@@ -11,16 +11,15 @@
 // #include "timeutils.hpp"
 
 namespace scribe {
-	// Constants
-	constexpr char EOL = '\n';
+    // Constants
+    constexpr char EOL = '\n';
     constexpr char SPACE = ' ';
-	constexpr char COMMA = ',';
-	constexpr char COMMA1 = ';';
-	constexpr char PERIOD = '.';
+    constexpr char COMMA = ',';
+    constexpr char COMMA1 = ';';
+    constexpr char PERIOD = '.';
     constexpr char OPEN_SQUARE_BRAKET = '[';
     constexpr char CLOSE_SQUARE_BRAKET = ']';
-	
-	
+
     // This class hold a look up table for string.
     // Note: This class is not threadsafe.
     template <typename T1, typename T2 = size_t> struct LookupTable {
@@ -74,7 +73,7 @@ namespace scribe {
         std::time_t timestamp;
         unsigned int pool_id;
         unsigned int server_id;
-		size_t pid;
+        size_t pid;
     };
 
     // The body of the Scribe log message.
@@ -102,4 +101,4 @@ namespace scribe {
         ServerDB servers;
         MessageDB msgids;
     };
-}
+} // namespace scribe
