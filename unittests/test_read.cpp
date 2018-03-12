@@ -3,20 +3,14 @@
 
 #include "ioutils.hpp"
 
-#include "constraints.hpp"
-#include "parser.hpp"
-#include "parser_array.hpp"
-#include "wordcount.hpp"
-#include "scribe.hpp"
-#include "timer.hpp"
-#include <time.h>
+#include "algorithms.hpp"
+#include "line_parser.hpp"
+#include "utils/timer.hpp"
 
 int main(int argc, char *argv[]) {
-    scribe::WordCount<1<<16> parser;
     utils::ElapsedTime<utils::SECOND> timer;
-    for (auto idx = 1; idx < argc; ++idx) {
-        auto stats = parser(argv[idx]);
-        fmt::print("lines: {0}, words: {1}, bytes: {2}\n", stats.line_count,
-                   stats.word_count, stats.byte_count);
-    }
+    scribe::FileReader<1 << 16, scribe::LineStats> parser;
+    scribe::LineStats stats;
+    for (auto idx = 1; idx < argc; ++idx) { parser(argv[idx], stats); }
+    stats.print("Summary:");
 }

@@ -13,7 +13,7 @@ namespace scribe {
     // A struct that read file content in fixed size chunks and parse them to a parser.
     template <size_t BUFFER_SIZE, typename Parser> class FileReader {
       public:
-        void operator()(const char *datafile, Parser &parser) {
+        void operator()(const char *datafile, Parser &parser, const size_t offset = 0) {
             char read_buffer[BUFFER_SIZE + 1];
             int fd = ::open(datafile, O_RDONLY);
 
@@ -22,6 +22,16 @@ namespace scribe {
                 std::stringstream writer;
                 writer << "Cannot open file \"" << datafile << "\"";
                 throw(std::runtime_error(writer.str()));
+            }
+
+            // Shift to desired location if it is not zero.
+            if (offset) {
+                auto retval = lseek(fd, offset, SEEK_SET);
+                if (retval != offset) {
+                    std::stringstream writer;
+                    writer << "Cannot seek for the location " << offset << " in " << datafile;
+                    throw(std::runtime_error(writer.str()));
+                }
             }
 
             // Read data into a string
