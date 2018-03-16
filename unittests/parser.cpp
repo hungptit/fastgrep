@@ -1,7 +1,7 @@
 #include "fmt/format.h"
 #include <string>
 
-#include "ioutils.hpp"
+#include "ioutils/ioutils.hpp"
 
 #include "scribe.hpp"
 #include "parser.hpp"

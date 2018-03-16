@@ -13,6 +13,7 @@ int main(int argc, char *argv[]) {
     po::options_description desc("Allowed options");
     std::string start_time, stop_time;
     std::string pattern;
+    scribe::MessageFilterParams params;
 
     // clang-format off
     desc.add_options()
@@ -22,7 +23,7 @@ int main(int argc, char *argv[]) {
 		("error,e", "Display error messages.")
 		("start-time,t", po::value<std::string>(&start_time), "Start time in 'yyyy-mm-dd hh::mm::ss' format.")
 		("stop-time,s", po::value<std::string>(&stop_time), "Stop time in 'yyyy/mm/dd hh::mm::ss' format")
-		("pattern,p", po::value<std::string>(&pattern), "Search pattern")
+		("pattern,p", po::value<std::string>(&params.pattern), "Search pattern")
         ("log-files,l", po::value<std::vector<std::string>>(&log_files), "Scribe log files")
         ("output,o", po::value<std::vector<std::string>>(&log_files), "Output file");
     // clang-format on
@@ -42,7 +43,6 @@ int main(int argc, char *argv[]) {
     }
 
     // Init input parameters
-    scribe::FilterParams params(start_time, stop_time, pattern);
 
     if (vm.count("verbose")) params.print();
 

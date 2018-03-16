@@ -5,44 +5,24 @@
 #include <vector>
 
 #include "header_parser.hpp"
-
-#include "folly/FBString.h"
+#include "utils/timeutils.hpp"
 
 namespace scribe {
-    struct FilterParams {
-        FilterParams(const std::string &start_time, const std::string &stop_time, const std::string &patt) {
-            start = start_time.empty() ? 0 : parse(start_time);
-            stop = stop_time.empty() ? 0 : parse(stop_time);
-            pattern = patt;
-        }
-
-        std::time_t parse(const std::string &timestamp) {
-            struct tm tm;
-            const char *ts = &timestamp[0];
-            strptime(ts, "%Y-%m-%d %H:%M:%S", &tm);
-            tm.tm_isdst = 0; // TODO: Disable day light time saving for now.
-            return mktime(&tm);
-        }
-
-        const char *get_timestamp(const std::time_t t) {
-            struct tm *timestamp = localtime(&t);
-            strftime(buffer, BUFFER_SIZE, "%Y-%m-%d %H:%M:%S", timestamp);
-            return buffer;
-        }
-
-        void print() {
-            if (start) fmt::print("Start time: {}\n", get_timestamp(start));
-            if (stop) fmt::print("Stop time: {}\n", get_timestamp(stop));
+    struct MessageFilterParams {
+        std::time_t begin_time;
+        std::time_t end_time;
+        std::string server;
+        std::string pool;
+        std::string pattern;
+        MessageFilterParams() : begin_time(0), end_time(0), server(), pool(), pattern() {}
+        void print() const {
+			utils::TimePrinter time_printer("%Y-%m-%d %H:%M:%S");
+            fmt::print("Begin time: {}\n", time_printer(begin_time));
+            fmt::print("End time: {}\n", time_printer(end_time));
+            if (!server.empty()) fmt::print("Server name: \n", server);
+            if (!pool.empty()) fmt::print("Pool name: {}\n", pool);
             if (!pattern.empty()) fmt::print("Search pattern: {}\n", pattern);
         }
-
-        std::time_t start;
-        std::time_t stop;
-        std::string pattern;
-
-        // Temporary variables
-        static size_t constexpr BUFFER_SIZE = 20;
-        char buffer[20];
     };
 
     // Time constraints.
@@ -114,20 +94,18 @@ namespace scribe {
         Patterns_fast(const String &patt) : pattern(patt){};
 
         bool operator()(const char *begin, const char *end) {
-			const char *ptr = begin;
-			const char *pattern_begin = &pattern[0];
-			const char *pattern_end = pattern_begin + pattern.size();
-			const char begin_char = pattern_begin[0];
-			const size_t N = pattern.size();
-			while ((ptr = static_cast<const char *>(memchr(ptr, begin_char, end - ptr)))) {
-				if (strncmp(ptr, pattern_begin, N) == 0) {
-					return true;
-				}
-				++ptr;
-			}
-			return false;
-		}
-		
+            const char *ptr = begin;
+            const char *pattern_begin = &pattern[0];
+            const char *pattern_end = pattern_begin + pattern.size();
+            const char begin_char = pattern_begin[0];
+            const size_t N = pattern.size();
+            while ((ptr = static_cast<const char *>(memchr(ptr, begin_char, end - ptr)))) {
+                if (strncmp(ptr, pattern_begin, N) == 0) { return true; }
+                ++ptr;
+            }
+            return false;
+        }
+
       private:
         String pattern;
     };
@@ -135,8 +113,6 @@ namespace scribe {
     // Filter message that match given constraints.
     template <typename Constraint, typename String> class MessageFilter {
       public:
-        // using String = std::string;
-        // using String = folly::fbstring;
         MessageFilter(Constraint &&cons) : buffer(), lines(0), constraints(std::forward<Constraint>(cons)) {
             buffer.reserve(1 << 12);
         }
