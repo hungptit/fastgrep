@@ -58,18 +58,20 @@ TEST_CASE("Parser a header", "") {
 }
 
 TEST_CASE("Parser a scribe message", "") {
-    const std::string header("[03/08/2018 12:00:00 node1234.example.com generic.workqueue 123456] {}");
-    fmt::print("Header: {}\n", header);
-    const char *begin = &header[0];
-    const char *end = begin + header.size();
+    const std::string header1("[03/08/2018 12:00:00 node1234.example.com generic.work 123456] {}");
+    const std::string header2("[03/08/2018 13:00:00 node123456.example.com generic.work.cron 123456] {}");
+    const char *begin = &header1[0];
+    const char *end = begin + header1.size();
     scribe::MessageHeaderParser parser;
-    scribe::MessageHeader msg = parser(begin, end);
+    scribe::MessageHeader msg1 = parser(begin, end);
+    scribe::MessageHeader msg2 = parser(&header2[0], &header2[0] + header2.size());
 
-    utils::data_dumper<cereal::JSONOutputArchive>(msg, "Header");
+    utils::data_dumper<cereal::JSONOutputArchive>(msg1, "Header1");
+    utils::data_dumper<cereal::JSONOutputArchive>(msg2, "Header2");
 
-    CHECK_THAT(msg.server, Equals("node1234.example.com"));
-    CHECK_THAT(msg.pool, Equals("generic.workqueue"));
-    CHECK(msg.pid == 123456);
-    CHECK(msg.timestamp == 1520528400);
+    CHECK_THAT(msg1.server, Equals("node1234.example.com"));
+    CHECK_THAT(msg1.pool, Equals("generic.work"));
+    CHECK(msg1.pid == 123456);
+    CHECK(msg1.timestamp == 1520528400);
 
 }
