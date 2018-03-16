@@ -3,26 +3,9 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
-
-#include "cereal/archives/binary.hpp"
-#include "cereal/archives/json.hpp"
-#include "cereal/archives/portable_binary.hpp"
-#include "cereal/archives/xml.hpp"
+#include "scribe.hpp"
 
 namespace scribe {
-    // A scribe header has this format "[03/08/2018 12:00:00 node1234.example.com generic.workqueue 123456]"
-    struct MessageHeader {
-        std::time_t timestamp; // Timestamp: 03/08/2018 23::00:50
-        std::string server;    // A server address: job1120.domain_name.com
-        std::string pool;      // A job pool name i.e job.pool.name
-        long pid;              // This is a process id
-
-        // For cereal
-        template <typename Archive> void serialize(Archive &ar) {
-            ar(CEREAL_NVP(timestamp), CEREAL_NVP(server), CEREAL_NVP(pool), CEREAL_NVP(pid));
-        }
-    };
-
     // Parse timestamp.
     class ScribeTimestampParser {
       public:

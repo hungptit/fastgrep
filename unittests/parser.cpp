@@ -14,9 +14,11 @@
 
 const std::string datafile("data.log");
 
-TEST_CASE("Basic tests", "") {
+#include "scribe.hpp"
+#include "header_parser.hpp"
+#include "body_parser.hpp"
+
+
+TEST_CASE("Control messages", "") {
     std::string buffer = ioutils::read<std::string>(datafile.c_str());
-    using Parser = scribe::BasicParser<scribe::TimeAll, scribe::AllServers, scribe::AllPools>;
-    // auto parser = Parser();
-    // parser(buffer.begin(), buffer.end());
 }

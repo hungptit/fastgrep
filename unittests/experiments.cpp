@@ -10,7 +10,7 @@ void parse(char *input_text) {
     const size_t AST_BUFFER_SIZE = 500;
     size_t ast_buffer[AST_BUFFER_SIZE];
 
-    const sajson::document &doc = parse(
+    const sajson::document &doc = sajson::parse(
         // The bounded allocation mode attempts to fit the AST into the given
         // fixed-size buffer, returning ERROR_OUT_OF_MEMORY if it is not large
         // enough to parse this document.

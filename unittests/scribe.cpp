@@ -2,14 +2,8 @@
 #include <string>
 
 #include "ioutils/ioutils.hpp"
-
-#include "constraints.hpp"
 #include "parser.hpp"
 #include "scribe.hpp"
-
-#include "header_parser.hpp"
-
-#include <time.h>
 
 #include "utils/timeutils.hpp"
 #include "utils/dumper.hpp"
@@ -57,21 +51,32 @@ TEST_CASE("Parser a header", "") {
     CHECK(msg.pid == 123456);
 }
 
-TEST_CASE("Parser a scribe message", "") {
-    const std::string header1("[03/08/2018 12:00:00 node1234.example.com generic.work 123456] {}");
-    const std::string header2("[03/08/2018 13:00:00 node123456.example.com generic.work.cron 123456] {}");
-    const char *begin = &header1[0];
-    const char *end = begin + header1.size();
-    scribe::MessageHeaderParser parser;
-    scribe::MessageHeader msg1 = parser(begin, end);
-    scribe::MessageHeader msg2 = parser(&header2[0], &header2[0] + header2.size());
-
-    utils::data_dumper<cereal::JSONOutputArchive>(msg1, "Header1");
-    utils::data_dumper<cereal::JSONOutputArchive>(msg2, "Header2");
-
-    CHECK_THAT(msg1.server, Equals("node1234.example.com"));
-    CHECK_THAT(msg1.pool, Equals("generic.work"));
-    CHECK(msg1.pid == 123456);
-    CHECK(msg1.timestamp == 1520528400);
-
+TEST_CASE("Parser scribe body", "") {
+	const std::string datafile("body.received.json");
+	std::string buffer = ioutils::read<std::string>(datafile.c_str());
+	fmt::print("{}\n", buffer);
+	
+	scribe::MessageBodyParser parser;
+	char *begin = const_cast<char*>(buffer.c_str());
+	parser(begin, buffer.size());
 }
+
+// TEST_CASE("Parser a scribe message", "") {
+//     const std::string header1("[03/08/2018 12:00:00 node1234.example.com generic.work 123456] {}");
+//     const std::string header2("[03/08/2018 13:00:00 node123456.example.com generic.work.cron 123456] {}");
+//     const char *begin = &header1[0];
+//     const char *end = begin + header1.size();
+//     scribe::MessageHeaderParser parser;
+//     scribe::MessageHeader msg1 = parser(begin, end);
+//     scribe::MessageHeader msg2 = parser(&header2[0], &header2[0] + header2.size());
+
+//     utils::data_dumper<cereal::JSONOutputArchive>(msg1, "Header1");
+//     utils::data_dumper<cereal::JSONOutputArchive>(msg2, "Header2");
+
+//     CHECK_THAT(msg1.server, Equals("node1234.example.com"));
+//     CHECK_THAT(msg1.pool, Equals("generic.work"));
+//     CHECK(msg1.pid == 123456);
+//     CHECK(msg1.timestamp == 1520528400);
+
+// }
+
