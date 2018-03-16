@@ -1,6 +1,5 @@
 #pragma once
 
-#include "scribe.hpp"
 #include <sstream>
 #include <vector>
 
@@ -114,20 +113,18 @@ namespace scribe {
         Patterns_fast(const String &patt) : pattern(patt){};
 
         bool operator()(const char *begin, const char *end) {
-			const char *ptr = begin;
-			const char *pattern_begin = &pattern[0];
-			const char *pattern_end = pattern_begin + pattern.size();
-			const char begin_char = pattern_begin[0];
-			const size_t N = pattern.size();
-			while ((ptr = static_cast<const char *>(memchr(ptr, begin_char, end - ptr)))) {
-				if (strncmp(ptr, pattern_begin, N) == 0) {
-					return true;
-				}
-				++ptr;
-			}
-			return false;
-		}
-		
+            const char *ptr = begin;
+            const char *pattern_begin = &pattern[0];
+            const char *pattern_end = pattern_begin + pattern.size();
+            const char begin_char = pattern_begin[0];
+            const size_t N = pattern.size();
+            while ((ptr = static_cast<const char *>(memchr(ptr, begin_char, end - ptr)))) {
+                if (strncmp(ptr, pattern_begin, N) == 0) { return true; }
+                ++ptr;
+            }
+            return false;
+        }
+
       private:
         String pattern;
     };
@@ -135,8 +132,6 @@ namespace scribe {
     // Filter message that match given constraints.
     template <typename Constraint, typename String> class MessageFilter {
       public:
-        // using String = std::string;
-        // using String = folly::fbstring;
         MessageFilter(Constraint &&cons) : buffer(), lines(0), constraints(std::forward<Constraint>(cons)) {
             buffer.reserve(1 << 12);
         }

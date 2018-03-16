@@ -12,9 +12,16 @@
 #include <time.h>
 
 #include "utils/timeutils.hpp"
+#include "utils/dumper.hpp"
 
 #define CATCH_CONFIG_MAIN
 #include "catch/catch.hpp"
+
+
+namespace {
+}
+
+using Catch::Matchers::Equals;
 
 TEST_CASE("Parse scribe timestamp", "") {
     auto val1 = scribe::ScribeTimestampParser::parse_two_digits("12/");
@@ -45,7 +52,24 @@ TEST_CASE("Parser a header", "") {
     printer(msg.timestamp);
     fmt::print("{0} <---> [{1} {2} {3} {4}]\n", header, printer.buffer, msg.server, msg.pool, msg.pid);
     CHECK(strcmp(printer.buffer, "2018-03-08 12:00:00") == 0);
-    CHECK(strcmp(msg.server, "node1234.example.com") == 0);
-    CHECK(strcmp(msg.pool, "generic.workqueue") == 0);
+    CHECK_THAT(msg.server, Equals("node1234.example.com"));
+    CHECK_THAT(msg.pool, Equals("generic.workqueue"));
     CHECK(msg.pid == 123456);
+}
+
+TEST_CASE("Parser a scribe message", "") {
+    const std::string header("[03/08/2018 12:00:00 node1234.example.com generic.workqueue 123456] {}");
+    fmt::print("Header: {}\n", header);
+    const char *begin = &header[0];
+    const char *end = begin + header.size();
+    scribe::MessageHeaderParser parser;
+    scribe::MessageHeader msg = parser(begin, end);
+
+    utils::data_dumper<cereal::JSONOutputArchive>(msg, "Header");
+
+    CHECK_THAT(msg.server, Equals("node1234.example.com"));
+    CHECK_THAT(msg.pool, Equals("generic.workqueue"));
+    CHECK(msg.pid == 123456);
+    CHECK(msg.timestamp == 1520528400);
+
 }

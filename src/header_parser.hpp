@@ -1,18 +1,26 @@
 #pragma once
-#include <cstdlib>
-#include <ctime>
-#include <cstring>
 #include <algorithm>
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
+
+#include "cereal/archives/binary.hpp"
+#include "cereal/archives/json.hpp"
+#include "cereal/archives/portable_binary.hpp"
+#include "cereal/archives/xml.hpp"
 
 namespace scribe {
     // A scribe header has this format "[03/08/2018 12:00:00 node1234.example.com generic.workqueue 123456]"
     struct MessageHeader {
-        static constexpr size_t SERVER_BUFFER_SIZE = 32;
-        static constexpr size_t POOL_BUFFER_SIZE = 48;
-        std::time_t timestamp;           // Timestamp: 03/08/2018 23::00:50
-        char server[SERVER_BUFFER_SIZE]; // A server address: job1120.domain_name.com
-        char pool[POOL_BUFFER_SIZE];     // A job pool name i.e job.pool.name
-        int pid;                         // This is a process id
+        std::time_t timestamp; // Timestamp: 03/08/2018 23::00:50
+        std::string server;    // A server address: job1120.domain_name.com
+        std::string pool;      // A job pool name i.e job.pool.name
+        long pid;              // This is a process id
+
+        // For cereal
+        template <typename Archive> void serialize(Archive &ar) {
+            ar(CEREAL_NVP(timestamp), CEREAL_NVP(server), CEREAL_NVP(pool), CEREAL_NVP(pid));
+        }
     };
 
     // Parse timestamp.
@@ -79,14 +87,14 @@ namespace scribe {
             // Parse server name
             const char *pos = static_cast<const char *>(memchr(ptr, SPACE, end - ptr));
             assert(pos != NULL);
-            memcpy(header.server, ptr, std::min<size_t>(pos - ptr, MessageHeader::SERVER_BUFFER_SIZE));
+            header.server.append(ptr, pos - ptr);
 
             // Parse pool name.
             ptr = pos + 1;
             assert(ptr < end);
             pos = static_cast<const char *>(memchr(ptr, SPACE, end - ptr));
             assert(pos != NULL);
-            memcpy(header.pool, ptr, std::min<size_t>(pos - ptr, MessageHeader::POOL_BUFFER_SIZE));
+            header.pool.append(ptr, pos - ptr);
 
             // Parse process id.
             ptr = pos + 1;
