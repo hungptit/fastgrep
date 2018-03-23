@@ -126,10 +126,10 @@ struct JsonExplorer {
 
     void print() const {
         fmt::print("Keys: ");
-        // Display results;
         std::for_each(keys.cbegin(), keys.cend(), [](auto item) { fmt::print("{0} ", item); });
         fmt::print("\n");
-    }
+	}
+
 
   private:
     std::unordered_set<std::string> keys;

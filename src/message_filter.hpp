@@ -1,11 +1,11 @@
 #pragma once
 
-#include "scribe.hpp"
 #include <sstream>
 #include <vector>
 
 #include "header_parser.hpp"
 #include "utils/timeutils.hpp"
+#include "constraints.hpp"
 
 namespace scribe {
     struct MessageFilterParams {

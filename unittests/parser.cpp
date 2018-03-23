@@ -16,7 +16,7 @@ const std::string datafile("data.log");
 
 TEST_CASE("Basic tests", "") {
     std::string buffer = ioutils::read<std::string>(datafile.c_str());
-    using Parser = scribe::BasicParser<scribe::TimeAll, scribe::AllServers, scribe::AllPools>;
+    using Parser = scribe::BasicParser<scribe::TimeAll, scribe::AllPatterns, scribe::AllPatterns>;
     // auto parser = Parser();
     // parser(buffer.begin(), buffer.end());
 }
