@@ -24,7 +24,4 @@ namespace scribe {
         bool operator()(const std::time_t t) { return (t >= begin) && (t <= end); }
         std::time_t begin, end;
     };
-
-
-
 } // namespace scribe

@@ -9,6 +9,7 @@
 #include <time.h>
 
 #include "boost/program_options.hpp"
+#include "utils/matchers.hpp"
 
 namespace {
 }
@@ -65,8 +66,8 @@ int main(int argc, char *argv[]) {
     bool parse_info(vm.count("info"));
 
 	scribe::TimeAll tcons;
-	scribe::AllServers scons;
-	scribe::AllPools pcons;
+	utils::baseline::Contains scons();
+	utils::AllPatterns pcons();
 	
 	auto parser = scribe::BasicParser<decltype(tcons), decltype(scons), decltype(pcons)>(std::move(tcons), std::move(scons), std::move(pcons));
     for (auto const afile : logfiles) {

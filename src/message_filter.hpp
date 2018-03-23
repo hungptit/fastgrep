@@ -3,9 +3,10 @@
 #include <sstream>
 #include <vector>
 
-#include "header_parser.hpp"
-#include "utils/timeutils.hpp"
 #include "constraints.hpp"
+#include "header_parser.hpp"
+#include "utils/matchers.hpp"
+#include "utils/timeutils.hpp"
 
 namespace scribe {
     struct MessageFilterParams {
@@ -16,7 +17,7 @@ namespace scribe {
         std::string pattern;
         MessageFilterParams() : begin_time(0), end_time(0), server(), pool(), pattern() {}
         void print() const {
-			utils::TimePrinter time_printer("%Y-%m-%d %H:%M:%S");
+            utils::TimePrinter time_printer("%Y-%m-%d %H:%M:%S");
             fmt::print("Begin time: {}\n", time_printer(begin_time));
             fmt::print("End time: {}\n", time_printer(end_time));
             if (!server.empty()) fmt::print("Server name: \n", server);
@@ -79,41 +80,10 @@ namespace scribe {
         template <typename String> bool operator()(const String &) { return true; }
     };
 
-    // Search for a pattern using string::find.
-    template <typename String> class Patterns {
-      public:
-        Patterns(const String &patt) : pattern(patt){};
-        bool operator()(const String &buffer) { return buffer.find(pattern) != String::npos; }
-
-      private:
-        String pattern;
-    };
-
-    template <typename String> class Patterns_fast {
-      public:
-        Patterns_fast(const String &patt) : pattern(patt){};
-
-        bool operator()(const char *begin, const char *end) {
-            const char *ptr = begin;
-            const char *pattern_begin = &pattern[0];
-            const char *pattern_end = pattern_begin + pattern.size();
-            const char begin_char = pattern_begin[0];
-            const size_t N = pattern.size();
-            while ((ptr = static_cast<const char *>(memchr(ptr, begin_char, end - ptr)))) {
-                if (strncmp(ptr, pattern_begin, N) == 0) { return true; }
-                ++ptr;
-            }
-            return false;
-        }
-
-      private:
-        String pattern;
-    };
-
     // Filter message that match given constraints.
-    template <typename Constraint, typename String> class MessageFilter {
+    template <typename Constraints> class MessageFilter {
       public:
-        MessageFilter(Constraint &&cons) : buffer(), lines(0), constraints(std::forward<Constraint>(cons)) {
+        MessageFilter(const std::string &patt) : buffer(), lines(0), constraints(patt) {
             buffer.reserve(1 << 12);
         }
         MessageFilter(const MessageFilter &value) = delete; // We do not support copy constructor.
@@ -133,8 +103,9 @@ namespace scribe {
                 ++lines;
 
                 // Parse the data
-                print();
-
+                if (constraints(buffer)) { print(); }
+				buffer.clear();
+				
                 // Update start
                 start = ++ptr;
 
@@ -147,12 +118,12 @@ namespace scribe {
         }
 
       private:
-        String buffer;
+        std::string buffer;
         size_t lines;
-        Constraint constraints;
-
+        Constraints constraints;
+        static constexpr char EOL = '\n';
         void print() {
-            if (constraints(buffer)) { fmt::print("{}", buffer.data()); }
+            fmt::print("{}", buffer.data());
             buffer.clear(); // Reset the buffer.
         }
     };
