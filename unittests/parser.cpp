@@ -21,4 +21,10 @@ const std::string datafile("data.log");
 
 TEST_CASE("Control messages", "") {
     std::string buffer = ioutils::read<std::string>(datafile.c_str());
+<<<<<<< HEAD
+=======
+    using Parser = scribe::BasicParser<scribe::TimeAll, scribe::AllPatterns, scribe::AllPatterns>;
+    // auto parser = Parser();
+    // parser(buffer.begin(), buffer.end());
+>>>>>>> 7c8a11201d4bb608e502f4056a93b905c30fdbf0
 }

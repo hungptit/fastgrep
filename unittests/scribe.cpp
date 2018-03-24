@@ -11,10 +11,6 @@
 #define CATCH_CONFIG_MAIN
 #include "catch/catch.hpp"
 
-
-namespace {
-}
-
 using Catch::Matchers::Equals;
 
 TEST_CASE("Parse scribe timestamp", "") {

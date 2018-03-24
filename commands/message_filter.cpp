@@ -13,6 +13,7 @@ int main(int argc, char *argv[]) {
     po::options_description desc("Allowed options");
     std::string start_time, stop_time;
     std::string pattern;
+    scribe::MessageFilterParams params;
 
     // clang-format off
     desc.add_options()
@@ -42,25 +43,18 @@ int main(int argc, char *argv[]) {
     }
 
     // Init input parameters
-    scribe::FilterParams params(start_time, stop_time, pattern);
 
     if (vm.count("verbose")) params.print();
 
     // // Construct time constraints
     // scribe::ScribeHeaderTimeConstraints time_constraints(params.start, params.stop);
 
-    // // Construct search constraints
-    // scribe::ScribeMessagePattern search_patterns(params.pattern);
-
     // Search for desired patterns in a list of log files.
-	using String = std::string;
-	// using String = folly::fbstring;
-	using Patterns = scribe::Patterns<String>;
-	// using Patterns = scribe::Patterns_fast<String>;
-    using MessageFilter = typename scribe::MessageFilter<Patterns, String>;
-	// scribe::AllMessages all;
-	Patterns patt(pattern);
-	MessageFilter filter(std::move(patt));
-    scribe::FileReader<1 << 16, MessageFilter> message_filter;
-    for (auto afile : log_files) { message_filter(afile.c_str(), filter); }
+	// using Patterns = utils::baseline::Contains;
+	using Patterns = utils::sse2::Contains;
+	// using Patterns = utils::avx2::Contains;
+    using MessageFilter = typename scribe::MessageFilter<Patterns>;
+	MessageFilter filter(pattern);
+    scribe::FileReader<1 << 16, MessageFilter> reader;
+    for (auto afile : log_files) { reader(afile.c_str(), filter); }
 }

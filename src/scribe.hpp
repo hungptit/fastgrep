@@ -1,10 +1,7 @@
 #pragma once
 #include <array>
 #include <ctime>
-#include <map>
-#include <set>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 #include "cereal/archives/binary.hpp"
@@ -24,9 +21,9 @@ namespace scribe {
             ar(CEREAL_NVP(timestamp), CEREAL_NVP(server), CEREAL_NVP(pool), CEREAL_NVP(pid));
         }
     };
-	
-	// A scribe message body is a JSON string with below format
-	enum class ControlMessageType : int8_t {
+
+    // Control message types
+    enum class ControlMessageType : int8_t {
         PUBLISH = 0,
         RELAYING = 1,
         DROPPED = 2,
@@ -36,53 +33,61 @@ namespace scribe {
         FINISHED = 6,
     };
 
-	enum class ErrorMessageType : int8_t {
-		CONNECTION = 0,
-		EXCEPTION = 1,
-	};
+    enum class ErrorMessageType : int8_t {
+        CONNECTION = 0,
+        EXCEPTION = 1,
+    };
 
-	enum class RabbitMQMessageType : int8_t {
-		PUBLISH = 0,
-	};
-	
-	using MessageID = std::array<char, 22>;
-	// Control message
-	struct ExecutionMessage {
-		MessageID msgid;
+    enum class RabbitMQMessageType : int8_t {
+        PUBLISH = 0,
+    };
 
-        template <typename Archive> void serialize(Archive &ar) {
-            ar(CEREAL_NVP(msgid));
-        }
-	};
+    using MessageID = std::string;
 
-	struct PublishMessage {
-		MessageID msgid;
-		std::string resource;
-		std::string request;
-		
-        template <typename Archive> void serialize(Archive &ar) {
-            ar(CEREAL_NVP(msgid));
-        }
-	};
+    // Control message states. This can help us to track the life cycle of any message.
+    struct ExecutionMessage {
+        MessageID msgid;
+        std::array<int8_t, 8> states; // Store states of a messages i.e publish, relaying, received etc.
+        template <typename Archive> void serialize(Archive &ar) { ar(CEREAL_NVP(msgid), CEREAL_NVP(states)); }
+    };
 
-	// Publish message
-	struct RabbitMQMessage {
-		RabbitMQMessageType type;
-		MessageID msgid;
-		std::string message;
-		
+    struct PublishMessage {
+        MessageID msgid;
+        std::string resource;
+        std::string request;
+
+        template <typename Archive> void serialize(Archive &ar) { ar(CEREAL_NVP(msgid)); }
+    };
+
+    // Publish message
+    struct RabbitMQMessage {
+        RabbitMQMessageType type;
+        MessageID msgid;
+        std::string message;
+
         template <typename Archive> void serialize(Archive &ar) {
             ar(CEREAL_NVP(type), CEREAL_NVP(msgid), CEREAL_NVP(message));
         }
-	};
+    };
 
-	struct ErrorMessage {
-		MessageID msgid;
-		std::string message;
+    struct ErrorMessage {
+        MessageID msgid;
+        std::string message;
 
-		template <typename Archive> void serialize(Archive &ar) {
+        template <typename Archive> void serialize(Archive &ar) {
             ar(CEREAL_NVP(msgid), CEREAL_NVP(message));
         }
-	};	
+    };
 
+	struct RawErrorMessage {
+		MessageID msgid;
+		std::string message;
+		std::string subject;
+		std::string cluster;
+
+        template <typename Archive> void serialize(Archive &ar) {
+            ar(CEREAL_NVP(msgid), CEREAL_NVP(message), CEREAL_NVP(subject), CEREAL_NVP(cluster));
+        }
+	};
+	
 } // namespace scribe
