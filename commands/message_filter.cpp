@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
 		("error,e", "Display error messages.")
 		("start-time,t", po::value<std::string>(&start_time), "Start time in 'yyyy-mm-dd hh::mm::ss' format.")
 		("stop-time,s", po::value<std::string>(&stop_time), "Stop time in 'yyyy/mm/dd hh::mm::ss' format")
-		("pattern,p", po::value<std::string>(&pattern), "Search pattern")
+		("pattern,p", po::value<std::string>(&params.pattern), "Search pattern")
         ("log-files,l", po::value<std::vector<std::string>>(&log_files), "Scribe log files")
         ("output,o", po::value<std::vector<std::string>>(&log_files), "Output file");
     // clang-format on
@@ -43,7 +43,6 @@ int main(int argc, char *argv[]) {
     }
 
     // Init input parameters
-
     if (vm.count("verbose")) params.print();
 
     // // Construct time constraints
@@ -54,7 +53,7 @@ int main(int argc, char *argv[]) {
 	using Patterns = utils::sse2::Contains;
 	// using Patterns = utils::avx2::Contains;
     using MessageFilter = typename scribe::MessageFilter<Patterns>;
-	MessageFilter filter(pattern);
+	MessageFilter filter(params.pattern);
     scribe::FileReader<1 << 16, MessageFilter> reader;
     for (auto afile : log_files) { reader(afile.c_str(), filter); }
 }

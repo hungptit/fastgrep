@@ -11,8 +11,7 @@
 #include "boost/program_options.hpp"
 #include "utils/matchers.hpp"
 
-namespace {
-}
+namespace {}
 
 int main(int argc, char *argv[]) {
     namespace po = boost::program_options;
@@ -65,13 +64,14 @@ int main(int argc, char *argv[]) {
     bool parse_error(vm.count("error"));
     bool parse_info(vm.count("info"));
 
-	scribe::TimeAll tcons;
-	utils::baseline::Contains scons();
-	utils::AllPatterns pcons();
-	
-	auto parser = scribe::BasicParser<decltype(tcons), decltype(scons), decltype(pcons)>(std::move(tcons), std::move(scons), std::move(pcons));
-    for (auto const afile : logfiles) {
-        std::string buffer = ioutils::read<std::string>(afile.c_str());
-        parser(buffer.begin(), buffer.end());
-    }
+    scribe::TimeAll tcons;
+    utils::baseline::Contains scons();
+    utils::AllPatterns pcons();
+
+    // auto parser = scribe::BasicParser<decltype(tcons), decltype(scons),
+    // decltype(pcons)>(std::move(tcons), std::move(scons), std::move(pcons)); for (auto const afile :
+    // logfiles) {
+    //     std::string buffer = ioutils::read<std::string>(afile.c_str());
+    //     parser(buffer.begin(), buffer.end());
+    // }
 }
