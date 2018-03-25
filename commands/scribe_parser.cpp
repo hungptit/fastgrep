@@ -68,6 +68,7 @@ int main(int argc, char *argv[]) {
     utils::baseline::Contains scons();
     utils::AllPatterns pcons();
 
+
     // auto parser = scribe::BasicParser<decltype(tcons), decltype(scons), decltype(pcons)>(
     //     std::move(tcons), std::move(scons), std::move(pcons));
     // for (auto const afile : logfiles) {

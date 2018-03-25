@@ -34,7 +34,7 @@ namespace scribe {
             ptr += 3;
             tm.tm_sec = parse_two_digits(ptr);
 
-            tm.tm_isdst = 0;
+            tm.tm_isdst = 0;	// Do not care about day light saving.
             return mktime(&tm);
         }
 

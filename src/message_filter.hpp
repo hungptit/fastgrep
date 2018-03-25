@@ -38,17 +38,6 @@ namespace scribe {
         std::time_t stop = 0;
     };
 
-    // Pattern constraint.
-    struct ScribeMessagePattern {
-        using String = std::string;
-        ScribeMessagePattern(const String &s) : pattern(s) {}
-        bool operator()(const String &buffer) {
-            if (pattern.empty()) return true;
-            return buffer.find(pattern) != String::npos;
-        }
-        String pattern;
-    };
-
     // Parse timestamp in the scribe header.
     struct ParseScribeTimestamp {
         std::time_t operator()(const char *begin, const char *end) {
@@ -76,10 +65,6 @@ namespace scribe {
         struct tm tm;
     };
 
-    struct AllMessages {
-        template <typename String> bool operator()(const String &) { return true; }
-    };
-
     // Filter message that match given constraints.
     template <typename Constraints> class MessageFilter {
       public:
@@ -88,7 +73,7 @@ namespace scribe {
         }
         MessageFilter(const MessageFilter &value) = delete; // We do not support copy constructor.
         ~MessageFilter() {
-            if (!buffer.empty()) print();
+            if (!buffer.empty()) process();
         }
 
         void operator()(const char *begin, const char *end) {
@@ -103,9 +88,8 @@ namespace scribe {
                 ++lines;
 
                 // Parse the data
-                if (constraints(buffer)) { print(); }
-				buffer.clear();
-				
+				process();
+
                 // Update start
                 start = ++ptr;
 
@@ -122,8 +106,8 @@ namespace scribe {
         size_t lines;
         Constraints constraints;
         static constexpr char EOL = '\n';
-        void print() {
-            fmt::print("{}", buffer.data());
+        void process() {
+            if (constraints(buffer)) fmt::print("{}", buffer.data());
             buffer.clear(); // Reset the buffer.
         }
     };
