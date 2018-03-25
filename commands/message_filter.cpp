@@ -50,10 +50,10 @@ int main(int argc, char *argv[]) {
 
     // Search for desired patterns in a list of log files.
 	// using Patterns = utils::baseline::Contains;
-	using Patterns = utils::sse2::Contains;
-	// using Patterns = utils::avx2::Contains;
+	// using Patterns = utils::sse2::Contains;
+	using Patterns = utils::avx2::Contains;
     using MessageFilter = typename scribe::MessageFilter<Patterns>;
 	MessageFilter filter(params.pattern);
-    scribe::FileReader<1 << 16, MessageFilter> reader;
+    scribe::FileReader<1 << 17, MessageFilter> reader;
     for (auto afile : log_files) { reader(afile.c_str(), filter); }
 }
