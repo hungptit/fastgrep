@@ -21,8 +21,8 @@ int main(int argc, char *argv[]) {
 		("verbose,v", "Display verbose information.")
 		("info,i", "Display information messages.")
 		("error,e", "Display error messages.")
-		("start-time,t", po::value<std::string>(&start_time), "Start time in 'yyyy-mm-dd hh::mm::ss' format.")
-		("stop-time,s", po::value<std::string>(&stop_time), "Stop time in 'yyyy/mm/dd hh::mm::ss' format")
+		("begin,t", po::value<std::string>(&start_time), "Start time in 'yyyy-mm-dd hh::mm::ss' format.")
+		("end,s", po::value<std::string>(&stop_time), "Stop time in 'yyyy-mm-dd hh::mm::ss' format")
 		("pattern,p", po::value<std::string>(&pattern), "Search pattern")
         ("log-files,l", po::value<std::vector<std::string>>(&log_files), "Scribe log files")
         ("output,o", po::value<std::vector<std::string>>(&log_files), "Output file");
@@ -43,7 +43,6 @@ int main(int argc, char *argv[]) {
     }
 
     // Init input parameters
-
     if (vm.count("verbose")) params.print();
 
     // // Construct time constraints

@@ -39,6 +39,7 @@ add_cxx_compiler_flag(-march=native)
 add_cxx_compiler_flag(-std=c++14)
 add_cxx_compiler_flag(-Wall)
 add_cxx_compiler_flag(-flto)
+add_cxx_compiler_flag(-pgo)
 
 # add_cxx_compiler_flag(-Wextra)
 
@@ -82,8 +83,6 @@ set(LIB_JEMALLOC "${EXTERNAL_DIR}/lib/libjemalloc.a")
 # Include folder
 include_directories ("${EXTERNAL_DIR}/include")
 include_directories ("${ROOT_DIR}/src")
-include_directories ("${ROOT_DIR}/../ioutils/src")
-include_directories ("${ROOT_DIR}/../utils/src")
 
 # This option make sure that we use the local boost version. Note that if the
 # system boost is installed then CMake might use that boost version.
