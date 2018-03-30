@@ -6,69 +6,69 @@
 #include "constraints.hpp"
 #include "header_parser.hpp"
 #include "utils/matchers.hpp"
+#include "utils/matchers_avx2.hpp"
+#include "utils/timestamp.hpp"
 #include "utils/timeutils.hpp"
 
 namespace scribe {
     struct MessageFilterParams {
-        std::time_t begin_time;
-        std::time_t end_time;
+        utils::Timestamp begin;
+        utils::Timestamp end;
         std::string server;
         std::string pool;
         std::string pattern;
-        MessageFilterParams() : begin_time(0), end_time(0), server(), pool(), pattern() {}
+        std::vector<std::string> infiles;
+        std::string outfile;
+
+        MessageFilterParams() : begin(), end(), server(), pool(), pattern(), infiles(), outfile() {}
         void print() const {
-            utils::TimePrinter time_printer("%Y-%m-%d %H:%M:%S");
-            fmt::print("Begin time: {}\n", time_printer(begin_time));
-            fmt::print("End time: {}\n", time_printer(end_time));
+            utils::TimePrinter time_printer("%m-%d-%Y %H:%M:%S");
+            fmt::print("Begin time: {}\n", time_printer(begin.to_tm()));
+            fmt::print("End time: {}\n", time_printer(end.to_tm()));
             if (!server.empty()) fmt::print("Server name: \n", server);
             if (!pool.empty()) fmt::print("Pool name: {}\n", pool);
             if (!pattern.empty()) fmt::print("Search pattern: {}\n", pattern);
         }
     };
 
-    // Time constraints.
-    struct ScribeHeaderTimeConstraints {
-        ScribeHeaderTimeConstraints(const std::time_t begin, std::time_t end) : start(begin), stop(end) {}
-        bool operator()(std::time_t t) {
-            if ((start == 0) && (stop == 0)) return true;
-            if (stop == 0) return t >= start;
-            return (t >= start) && (t <= stop);
-        }
-        std::time_t start = 0;
-        std::time_t stop = 0;
+    struct All {
+        All(const MessageFilterParams &){};
+        bool operator()(const std::string &line) { return true; }
     };
 
-    // Parse timestamp in the scribe header.
-    struct ParseScribeTimestamp {
-        std::time_t operator()(const char *begin, const char *end) {
-            if (end < (begin + BUFFER_SIZE)) {
-                fmt::MemoryWriter writer;
-                writer << "Invalid timestamp string: " << std::string(begin, end - begin);
-                throw(std::runtime_error(writer.str()));
-            }
-            memcpy(buffer, begin, BUFFER_SIZE);
-            strptime(buffer, "%m/%d/%Y %H:%M:%S", &tm);
-            tm.tm_isdst = 0; // TODO: Disable day light time saving for now.
-            std::time_t t = mktime(&tm);
-            // fmt::print("Timestamp: {}\n", get_timestamp(t));
-            return t;
+    class SimpleConstraints {
+      public:
+        using Contains = utils::avx2::Contains;
+        SimpleConstraints(const MessageFilterParams &params) : contains(params.pattern) {}
+        bool operator()(const std::string &line) { return contains(line); }
+
+      private:
+        Contains contains; // Search for a given string pattern
+    };
+
+    class BasicConstraints {
+      public:
+        using pattern_type = utils::avx2::Contains;
+        using time_type = utils::Timestamp;
+        using time_constraint_type = typename utils::Between<time_type>;
+        BasicConstraints(const MessageFilterParams &params)
+            : contains(params.pattern), between(params.begin, params.end) {}
+        bool operator()(const std::string &line) {
+            if (line.size() < 20) return false; // Skip invalid line
+            // Check the time constraints since it is cheaper than pattern constraint.
+            auto const t = utils::parse_timestamp<time_type>(line.data() + 1);
+            return between(t) && contains(line);
         }
 
-        const char *get_timestamp(std::time_t t) {
-            struct tm *timestamp = localtime(&t);
-            strftime(buffer, BUFFER_SIZE, "%Y-%m-%d %H:%M:%S", timestamp);
-            return buffer;
-        }
-
-        static size_t constexpr BUFFER_SIZE = 20;
-        char buffer[20];
-        struct tm tm;
+      private:
+        pattern_type contains; // Search for a given string pattern
+        time_constraint_type between;
     };
 
     // Filter message that match given constraints.
     template <typename Constraints> class MessageFilter {
       public:
-        MessageFilter(const std::string &patt) : buffer(), lines(0), constraints(patt) {
+        MessageFilter(const MessageFilterParams &params) : buffer(), lines(0), constraints(params) {
             buffer.reserve(1 << 12);
         }
         MessageFilter(const MessageFilter &value) = delete; // We do not support copy constructor.
@@ -88,7 +88,7 @@ namespace scribe {
                 ++lines;
 
                 // Parse the data
-				process();
+                process();
 
                 // Update start
                 start = ++ptr;
