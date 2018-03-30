@@ -1,0 +1,253 @@
+* Why do we need a fast scribe parser?
+  + Difficulties
+	- Very big files
+	- Occasionally need to parse scribe log data.
+	- Actively monitor issue with workers
+	  * Identifying new errors
+	  * Get a report about of worker execution errors
+	  * Message life cycle
+* Requirements
+** Efficient file I/O.
+** Optimized log parsers.
+** Fast console I/O.
+
+* Setup
+
+** Development servers
+   + CPU: ntel(R) Xeon(R) CPU E5-2699 v4 @ 2.20GHz
+   + Memory: 773519 MBytes
+   + Storage: Very fast network storage.
+
+** Macbook Pro
+   + CPU: Intel(R) Core(TM) i7-4770HQ CPU @ 2.20GHz
+   + Memory: 16 GB
+   + Storage: SSD
+
+* [[https://lemire.me/blog/2012/06/26/which-is-fastest-read-fread-ifstream-or-mmap/][How to write a fast file reader]]?
+*** A simple C++ solution using ifstream
+#+BEGIN_SRC
+    template <typename Container> Container read_iostream(const std::string &afile) {
+        std::ifstream t(afile);
+        Container str;
+
+        // Note: This is pretty bad.
+        t.seekg(0, std::ios::end);
+        str.reserve(t.tellg());
+        t.seekg(0, std::ios::beg);
+
+        str.assign((std::istreambuf_iterator<char>(t)), std::istreambuf_iterator<char>());
+        return str;
+    }
+#+END_SRC
+*** A memory mapped solution using boost library
+
+#+BEGIN_SRC
+    template <typename Container> Container read_memmap(const std::string &afile) {
+        boost::iostreams::mapped_file mmap(afile, boost::iostreams::mapped_file::readonly);
+        auto begin = mmap.const_data();
+        auto end = begin + mmap.size();
+        return Container(begin, end);
+    }
+
+#+END_SRC
+
+*** C style solution using read
+
+#+BEGIN_SRC
+https://lemire.me/blog/2012/06/26/which-is-fastest-read-fread-ifstream-or-mmap/
+    template <typename Container>
+    void read(const char *afile, Container &buffer, char *buf, const size_t buffer_size) {
+        int fd = ::open(afile, O_RDONLY);
+
+        // Check that we can open a given file.
+        if (fd < 0) {
+            fmt::MemoryWriter writer;
+            writer << "Cannot open file \"" << afile << "\"";
+            throw(std::runtime_error(writer.str()));
+        }
+
+        // Reserve the size of a buffer using file size information.
+        struct stat file_stat;
+        if (fstat(fd, &file_stat) < 0) return;
+        buffer.reserve(file_stat.st_size);
+
+        // Read data into a string
+        while (true) {
+            auto nbytes = ::read(fd, buf, buffer_size);
+            if (nbytes < 0) {
+                fmt::MemoryWriter writer;
+                writer << "Cannot read file \"" << afile << "\"";
+                throw(std::runtime_error(writer.str()));
+            };
+
+            buffer.append(buf, nbytes);
+
+            // Stop if we reach the end of file.
+            if (nbytes != static_cast<decltype(nbytes)>(buffer_size)) {
+                break;
+            };
+        }
+
+        // Close our file.
+        ::close(fd);
+    }
+#+END_SRC
+
+** Benchmark results
+
+*** Linux
+
+#+BEGIN_SRC
+[prod PTEST1] hdang@dev115:~/working/ioutils/benchmark> ./read_data
+Celero
+Timer resolution: 0.001000 us
+-----------------------------------------------------------------------------------------------------------------------------------------------
+     Group      |   Experiment    |   Prob. Space   |     Samples     |   Iterations    |    Baseline     |  us/Iteration   | Iterations/sec  |
+-----------------------------------------------------------------------------------------------------------------------------------------------
+read            | iostream        |               0 |              10 |               1 |         1.00000 |      9512.00000 |          105.13 |
+read            | boost_memmap    |               0 |              10 |               1 |         0.04762 |       453.00000 |         2207.51 |
+read            | read_2_10       |               0 |              10 |               1 |         0.10219 |       972.00000 |         1028.81 |
+read            | read_2_12       |               0 |              10 |               1 |         0.04310 |       410.00000 |         2439.02 |
+read            | read_2_13       |               0 |              10 |               1 |         0.03553 |       338.00000 |         2958.58 |
+read            | read_2_14       |               0 |              10 |               1 |         0.03133 |       298.00000 |         3355.70 |
+read            | read_2_15       |               0 |              10 |               1 |         0.02986 |       284.00000 |         3521.13 |
+read            | read_2_16       |               0 |              10 |               1 |         0.02881 |       274.00000 |         3649.64 |
+read            | read_2_17       |               0 |              10 |               1 |         0.02796 |       266.00000 |         3759.40 |
+read            | read_2_18       |               0 |              10 |               1 |         0.02849 |       271.00000 |         3690.04 |
+read            | read_2_19       |               0 |              10 |               1 |         0.03017 |       287.00000 |         3484.32 |
+read            | read_2_20       |               0 |              10 |               1 |         0.02849 |       271.00000 |         3690.04 |
+read            | read_2_20_provi |               0 |              10 |               1 |         0.02817 |       268.00000 |         3731.34 |
+read            | read_trunk      |               0 |              10 |               1 |         0.02807 |       267.00000 |         3745.32 |
+Complete.
+#+END_SRC
+
+*** MacOS
+
+#+BEGIN_SRC
+hdang@015249 ~/w/i/benchmark> ./read_data
+Celero
+Timer resolution: 0.001000 us
+-----------------------------------------------------------------------------------------------------------------------------------------------
+     Group      |   Experiment    |   Prob. Space   |     Samples     |   Iterations    |    Baseline     |  us/Iteration   | Iterations/sec  |
+-----------------------------------------------------------------------------------------------------------------------------------------------
+read            | iostream        |               0 |              10 |               1 |         1.00000 |      1854.00000 |          539.37 |
+read            | boost_memmap    |               0 |              10 |               1 |         0.07605 |       141.00000 |         7092.20 |
+read            | read_2_10       |               0 |              10 |               1 |         0.21143 |       392.00000 |         2551.02 |
+read            | read_2_12       |               0 |              10 |               1 |         0.07335 |       136.00000 |         7352.94 |
+read            | read_2_13       |               0 |              10 |               1 |         0.05448 |       101.00000 |         9900.99 |
+read            | read_2_14       |               0 |              10 |               1 |         0.04315 |        80.00000 |        12500.00 |
+read            | read_2_15       |               0 |              10 |               1 |         0.03398 |        63.00000 |        15873.02 |
+read            | read_2_16       |               0 |              10 |               1 |         0.03290 |        61.00000 |        16393.44 |
+read            | read_2_17       |               0 |              10 |               1 |         0.03074 |        57.00000 |        17543.86 |
+read            | read_2_18       |               0 |              10 |               1 |         0.03182 |        59.00000 |        16949.15 |
+read            | read_2_19       |               0 |              10 |               1 |         0.03182 |        59.00000 |        16949.15 |
+read            | read_2_20       |               0 |              10 |               1 |         0.03452 |        64.00000 |        15625.00 |
+Complete.
+#+END_SRC
+* What is the fastest way to get the summary information of a file i.e file size, the number of lines, and max line length?
+** wc command
+** linestats
+** How do can we do that?
+   + [X] Only loop through the file one time.
+   + [X] Use memchr to search for a character in a given buffer.
+   + [X] Find out the optimum buffer size for the host OS.
+   + [X] Compile time optimization
+* What is the fastest way to search for lines that containt a given substring?
+** grep
+** ripgrep
+** ag
+** message_filter
+* Use std::string
+** Benchmark results.
+** Why message_filter is much slower compared with grep and rg? 
+   + [ ] Need to show the profiling results for grep, rg, and message_filter commands.
+*** Profiling results for grep
+#+BEGIN_SRC
+#+END_SRC
+*** Profiling results for ripgrep
+#+BEGIN_SRC
+#+END_SRC
+** Profiling results for message_filter
+#+BEGIN_SRC
+#+END_SRC
+* How can we speedup our message_filter command?
+From the profiling results it is obvious that we need a better string matching algorithm. According to this paper 
+the "naive" implementation using SSE2 intrinsict is faster than fancy algorithms such as ?? and ??.
+
+** Show profiling results using time command for message_filter, grep, and rg 
+#+BEGIN_SRC
+#+END_SRC
+
+** Show profiling results for SSE2 version of message_filter command
+#+BEGIN_SRC
+#+END_SRC
+
+** Show micro benchmark results for std::string::find vs SSE2 strstr
+#+BEGIN_SRC
+hdang@015249 ~/w/u/benchmark> ./string
+2018-03-26 22:07:43
+Running ./string
+Run on (8 X 2200 MHz CPU s)
+CPU Caches:
+  L1 Data 32K (x4)
+  L1 Instruction 32K (x4)
+  L2 Unified 262K (x4)
+  L3 Unified 6291K (x1)
+--------------------------------------------------------
+Benchmark                 Time           CPU Iterations
+--------------------------------------------------------
+std_string_find          38 ns         38 ns   17454270
+sse2_string_find         16 ns         16 ns   44362479
+#+END_SRC
+
+** Why do we see a big improvement?
+   + We use a more efficient algorithm which takes advantage of SSE2 instruction sets.
+
+** Lessons learned
+   + We need to know about our use cases and data.
+   + Elegant C++ might not provide an efficient implementation.
+   + Rust might have optimized solutions for string related functionality by default. I won't dive into a war between C/C++/Rust.
+   + Straight C++ implemention might be slower that a similar C/Rust solution. However, a carefully designed C++ solution will kick ass the rest except Assembly code :).
+   
+* Can we have a better solution?
+** Show the profiling results using perf.
+** Microbenchmark results
+#+BEGIN_SRC
+hdang@015249 ~/w/u/benchmark> ./string
+2018-03-26 22:11:50
+Running ./string
+Run on (8 X 2200 MHz CPU s)
+CPU Caches:
+  L1 Data 32K (x4)
+  L1 Instruction 32K (x4)
+  L2 Unified 262K (x4)
+  L3 Unified 6291K (x1)
+--------------------------------------------------------
+Benchmark                 Time           CPU Iterations
+--------------------------------------------------------
+std_string_find          39 ns         39 ns   13969825
+sse2_string_find         16 ns         16 ns   42873767
+avx2_string_find          9 ns          9 ns   78626949
+#+END_SRC
+** Lesson learned 
+   + We need to know our systems and be able take advantage of the modern computer architecture.
+   + Benchmarking/profiling are your friends.
+* What is the fastest way to look for errors?
+** grep
+** message_parser
+** Todos
+   + [ ] Show the benchmark results in tabular format.
+   + [ ] Show some perf profiling results
+	 + Called functions.
+	 + Instrutions etc.
+   + [ ] Validate the correctness.
+* How to filter the output log using time constraints?
+** Input parameters
+   + [ ] begin: Start time.
+   + [ ] end: Stop time.
+** Some benchmark results
+   + [ ] Display in tabular format.
+* Conclusion
+  + [ ] New commands speed up our debuging/monitoring processes.
+  + [ ] Actively monitor our worker health. This is an addition to our near real-time monitoring system using graphite/grafana.
+  + [ ] Keep track of message life cycle that allow users to quickly identifying their worker issues.
