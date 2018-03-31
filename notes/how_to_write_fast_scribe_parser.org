@@ -270,6 +270,8 @@ File size: 5520716853
 
 *** Why linestats is faster that wc eventhough we do more?
 
+The output of perf command has shown that linestats uses less instructions/branches than that of wc and that explains why it is faster.
+
 #+BEGIN_SRC
 
  Performance counter stats for './linestats /mnt/weblogs/scribe/workqueue-execution/workqueue-execution-2018-03-30_00000' (5 runs):
