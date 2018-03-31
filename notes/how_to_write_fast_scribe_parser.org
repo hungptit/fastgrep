@@ -1,3 +1,5 @@
+#+TITLE: How to write a fast grep command
+
 * Why do we need a fast scribe parser?
   + Difficulties
 	- Very big files
@@ -95,7 +97,7 @@ https://lemire.me/blog/2012/06/26/which-is-fastest-read-fread-ifstream-or-mmap/
 
 ** Benchmark results
 
-*** Linux
+*** Linux i.e our development servers
 
 #+BEGIN_SRC
 [prod PTEST1] hdang@dev115:~/working/ioutils/benchmark> ./read_data
@@ -144,110 +146,508 @@ read            | read_2_19       |               0 |              10 |         
 read            | read_2_20       |               0 |              10 |               1 |         0.03452 |        64.00000 |        15625.00 |
 Complete.
 #+END_SRC
-* What is the fastest way to get the summary information of a file i.e file size, the number of lines, and max line length?
-** wc command
-** linestats
-** How do can we do that?
-   + [X] Only loop through the file one time.
-   + [X] Use memchr to search for a character in a given buffer.
-   + [X] Find out the optimum buffer size for the host OS.
-   + [X] Compile time optimization
-* What is the fastest way to search for lines that containt a given substring?
-** grep
-** ripgrep
-** ag
-** message_filter
-* Use std::string
-** Benchmark results.
-** Why message_filter is much slower compared with grep and rg? 
-   + [ ] Need to show the profiling results for grep, rg, and message_filter commands.
-*** Profiling results for grep
-#+BEGIN_SRC
-#+END_SRC
-*** Profiling results for ripgrep
-#+BEGIN_SRC
-#+END_SRC
-** Profiling results for message_filter
-#+BEGIN_SRC
-#+END_SRC
-* How can we speedup our message_filter command?
-From the profiling results it is obvious that we need a better string matching algorithm. According to this paper 
-the "naive" implementation using SSE2 intrinsict is faster than fancy algorithms such as ?? and ??.
 
-** Show profiling results using time command for message_filter, grep, and rg 
+* How to write a fast command that can display the summary information of files i.e file size, the number of lines, and max line length.
+
+** [[https://github.com/hungptit/scribe_parser/blob/working/src/algorithms.hpp][Proposed solution using our fast reader]]
+
 #+BEGIN_SRC
+    // A struct that read file content in fixed size chunks and parse them to a parser.
+    template <size_t BUFFER_SIZE, typename Parser> class FileReader {
+      public:
+        void operator()(const char *datafile, Parser &parser, const size_t offset = 0) {
+            char read_buffer[BUFFER_SIZE + 1];
+            int fd = ::open(datafile, O_RDONLY);
+
+            // Check that we can open a given file.
+            if (fd < 0) {
+                std::stringstream writer;
+                writer << "Cannot open file \"" << datafile << "\"";
+                throw(std::runtime_error(writer.str()));
+            }
+
+            // Shift to desired location if it is not zero.
+            if (offset) {
+                auto retval = lseek(fd, offset, SEEK_SET);
+                if (retval != offset) {
+                    std::stringstream writer;
+                    writer << "Cannot seek for the location " << offset << " in " << datafile;
+                    throw(std::runtime_error(writer.str()));
+                }
+            }
+
+            // Read data into a string
+            while (true) {
+                auto nbytes = ::read(fd, read_buffer, BUFFER_SIZE);
+                if (nbytes < 0) {
+                    std::stringstream writer;
+                    writer << "Cannot read file \"" << datafile << "\"";
+                    throw(std::runtime_error(writer.str()));
+                };
+
+                // Parse read_buffer to get some useful information.
+                parser(read_buffer, read_buffer + nbytes);
+
+                // Stop if we reach the end of file.
+                if (nbytes != static_cast<decltype(nbytes)>(BUFFER_SIZE)) { break; };
+            }
+
+            // Close our file.
+            ::close(fd);
+        }
+    };
 #+END_SRC
 
-** Show profiling results for SSE2 version of message_filter command
+** How fast is our command?
+*** Get the line information using wc command
 #+BEGIN_SRC
+[prod PTEST1] hdang@dev115:~/working/scribe_parser/commands> /usr/bin/time --verbose wc -l /mnt/weblogs/scribe/workqueue-execution/workqueue-execution-2018-03-30_00000
+7908977 /mnt/weblogs/scribe/workqueue-execution/workqueue-execution-2018-03-30_00000
+        Command being timed: "wc -l /mnt/weblogs/scribe/workqueue-execution/workqueue-execution-2018-03-30_00000"
+        User time (seconds): 2.76 <====
+        System time (seconds): 1.60 <====
+        Percent of CPU this job got: 99%
+        Elapsed (wall clock) time (h:mm:ss or m:ss): 0:04.37 <====
+        Average shared text size (kbytes): 0
+        Average unshared data size (kbytes): 0
+        Average stack size (kbytes): 0
+        Average total size (kbytes): 0
+        Maximum resident set size (kbytes): 632
+        Average resident set size (kbytes): 0
+        Major (requiring I/O) page faults: 0
+        Minor (reclaiming a frame) page faults: 192
+        Voluntary context switches: 1
+        Involuntary context switches: 10
+        Swaps: 0
+        File system inputs: 0
+        File system outputs: 0
+        Socket messages sent: 0
+        Socket messages received: 0
+        Signals delivered: 0
+        Page size (bytes): 4096
+        Exit status: 0
 #+END_SRC
 
-** Show micro benchmark results for std::string::find vs SSE2 strstr
+*** Get line information using our command i.e linestats
 #+BEGIN_SRC
-hdang@015249 ~/w/u/benchmark> ./string
-2018-03-26 22:07:43
+[prod PTEST1] hdang@dev115:~/working/scribe_parser/commands> /usr/bin/time --verbose ./linestats /mnt/weblogs/scribe/workqueue-execution/workqueue-execution-2018-03-30_00000
+Number of bytes: 5520716853
+Number of lines: 7908977
+Max line length: 655995
+Min line lenght: 131
+File size: 5520716853
+        Command being timed: "./linestats /mnt/weblogs/scribe/workqueue-execution/workqueue-execution-2018-03-30_00000"
+        User time (seconds): 1.18 <====
+        System time (seconds): 1.29 <====
+        Percent of CPU this job got: 99%
+        Elapsed (wall clock) time (h:mm:ss or m:ss): 0:02.48 <====
+        Average shared text size (kbytes): 0
+        Average unshared data size (kbytes): 0
+        Average stack size (kbytes): 0
+        Average total size (kbytes): 0
+        Maximum resident set size (kbytes): 1724
+        Average resident set size (kbytes): 0
+        Major (requiring I/O) page faults: 0
+        Minor (reclaiming a frame) page faults: 459
+        Voluntary context switches: 9
+        Involuntary context switches: 15
+        Swaps: 0
+        File system inputs: 0
+        File system outputs: 0
+        Socket messages sent: 0
+        Socket messages received: 0
+        Signals delivered: 0
+        Page size (bytes): 4096
+        Exit status: 0
+#+END_SRC
+
+*** Why linestats is faster eventhough we do more?
+
+#+BEGIN_SRC
+
+ Performance counter stats for './linestats /mnt/weblogs/scribe/workqueue-execution/workqueue-execution-2018-03-30_00000' (5 runs):
+
+       2486.441365 task-clock                #    0.998 CPUs utilized            ( +-  0.47% )
+                25 context-switches          #    0.010 K/sec                    ( +- 10.65% )
+                 2 cpu-migrations            #    0.001 K/sec                    ( +- 31.18% )
+               445 page-faults               #    0.179 K/sec                    ( +-  0.09% )
+     5,475,324,084 cycles                    #    2.202 GHz                      ( +-  0.47% )
+   <not supported> stalled-cycles-frontend
+   <not supported> stalled-cycles-backend
+     2,679,405,089 instructions              #    0.49  insns per cycle          ( +-  0.01% )
+       426,067,527 branches                  #  171.356 M/sec                    ( +-  0.02% )
+        58,853,387 branch-misses             #   13.81% of all branches          ( +-  0.05% )
+
+       2.492355048 seconds time elapsed                                          ( +-  0.48% )
+
+ Performance counter stats for 'wc -l /mnt/weblogs/scribe/workqueue-execution/workqueue-execution-2018-03-30_00000' (5 runs):
+
+       4313.595973 task-clock                #    0.999 CPUs utilized            ( +-  0.56% )
+                13 context-switches          #    0.003 K/sec                    ( +- 21.48% )
+                 2 cpu-migrations            #    0.001 K/sec                    ( +- 77.94% )
+               170 page-faults               #    0.039 K/sec
+     9,499,009,163 cycles                    #    2.202 GHz                      ( +-  0.56% )
+   <not supported> stalled-cycles-frontend
+   <not supported> stalled-cycles-backend
+     3,906,703,903 instructions              #    0.41  insns per cycle          ( +-  0.04% )
+       907,193,896 branches                  #  210.310 M/sec                    ( +-  0.03% )
+        21,247,916 branch-misses             #    2.34% of all branches          ( +-  0.16% )
+
+       4.318761916 seconds time elapsed                                          ( +-  0.56% )
+
+#+END_SRC
+
+*** Lesson learned
+	+ Compile time optimization play an important role here since linestats and wc are very similar.
+	+ Fine tuning for specific systems pay off.
+	+ C++ will outperform C if we know what we are doing.
+
+* How to write a fast "simple" grep command?
+
+** Initial solution using std::string::find
+#+BEGIN_SRC
+    class SimpleConstraints {
+      public:
+        using Contains = utils::baseline::Contains;
+        SimpleConstraints(const MessageFilterParams &params) : contains(params.pattern) {}
+        bool operator()(const std::string &line) { return contains(line); }
+
+      private:
+        Contains contains; // Search for a given string pattern
+    };
+#+END_SRC
+
+** Benchmark results
+
+Below are the comparison results of our customized grep and the most popular grep like command for "Starting123" pattern
+
+| Command        | sys  | user | real |
+|----------------+------+------+------|
+| [[https://www.gnu.org/software/grep/][grep]]           | 0.04 | 0.06 | 0.11 |
+| [[https://github.com/BurntSushi/ripgrep][ripgrep]]        | 0.05 | 0.07 | 0.13 |
+| [[https://github.com/ggreer/the_silver_searcher][ag]]             | 0.17 | 0.03 | 0.22 |
+| [[https://github.com/hungptit/scribe_parser/blob/working/commands/message_filter.cpp][message-filter]] | 0.04 | 0.06 | 0.11 |
+
+Note: MacOS grep command is very slow, I used brew-grep in my benchmark.
+
+*** Detail benchmark results in MacOS
+
+**** message-filter
+#+BEGIN_SRC
+hdang@015249 ~/w/s/commands> time -lp ./message_filter -p Starting123 ../data/workqueue-execution_current
+real         0.11
+user         0.06
+sys          0.04
+   3313664  maximum resident set size
+         0  average shared memory size
+         0  average unshared data size
+         0  average unshared stack size
+       827  page reclaims
+         0  page faults
+         0  swaps
+         0  block input operations
+         0  block output operations
+         0  messages sent
+         0  messages received
+         0  signals received
+         2  voluntary context switches
+       100  involuntary context switches
+#+END_SRC
+
+**** grep
+#+BEGIN_SRC
+real         0.10
+user         0.06
+sys          0.03
+   3219456  maximum resident set size
+         0  average shared memory size
+         0  average unshared data size
+         0  average unshared stack size
+       802  page reclaims
+         0  page faults
+         0  swaps
+         0  block input operations
+         0  block output operations
+         0  messages sent
+         0  messages received
+         0  signals received
+         2  voluntary context switches
+        30  involuntary context switches
+#+END_SRC
+**** ripgrep
+#+BEGIN_SRC
+hdang@015249 ~/w/s/commands> time -lp rg Starting123 ../data/workqueue-execution_current
+
+#+END_SRC
+**** ag
+#+BEGIN_SRC
+hdang@015249 ~/w/s/commands> time -lp ag Starting123 ../data/workqueue-execution_current
+real         0.20
+user         0.03
+sys          0.15
+ 190373888  maximum resident set size
+         0  average shared memory size
+         0  average unshared data size
+         0  average unshared stack size
+     47946  page reclaims
+         0  page faults
+         0  swaps
+         0  block input operations
+         0  block output operations
+         0  messages sent
+         0  messages received
+         0  signals received
+         9  voluntary context switches
+        57  involuntary context switches
+#+END_SRC
+
+** Detail benchmark results for very large files
+#+BEGIN_SRC
+[prod PTEST1] hdang@dev115:~/working/scribe_parser/commands> /usr/bin/time --verbose ./message_filter -p Starting123 /mnt/weblogs/scribe/workqueue-execution/workqueue-execution-2018-03-30_00000
+        Command being timed: "./message_filter -p Starting123 /mnt/weblogs/scribe/workqueue-execution/workqueue-execution-2018-03-30_00000"
+        User time (seconds): 42.43
+        System time (seconds): 1.35
+        Percent of CPU this job got: 99%
+        Elapsed (wall clock) time (h:mm:ss or m:ss): 0:43.83 <===
+        Average shared text size (kbytes): 0
+        Average unshared data size (kbytes): 0
+        Average stack size (kbytes): 0
+        Average total size (kbytes): 0
+        Maximum resident set size (kbytes): 3904
+        Average resident set size (kbytes): 0
+        Major (requiring I/O) page faults: 0
+        Minor (reclaiming a frame) page faults: 1007
+        Voluntary context switches: 15
+        Involuntary context switches: 78
+        Swaps: 0
+        File system inputs: 0
+        File system outputs: 0
+        Socket messages sent: 0
+        Socket messages received: 0
+        Signals delivered: 0
+        Page size (bytes): 4096
+        Exit status: 0
+
+[prod PTEST1] hdang@dev115:~/working/scribe_parser/commands> /usr/bin/time --verbose grep Starting123 /mnt/weblogs/scribe/workqueue-execution/workqueue-execution-2018-03-30_00000
+Command exited with non-zero status 1
+        Command being timed: "grep Starting123 /mnt/weblogs/scribe/workqueue-execution/workqueue-execution-2018-03-30_00000"
+        User time (seconds): 4.66
+        System time (seconds): 1.16
+        Percent of CPU this job got: 99%
+        Elapsed (wall clock) time (h:mm:ss or m:ss): 0:05.83 <===
+        Average shared text size (kbytes): 0
+        Average unshared data size (kbytes): 0
+        Average stack size (kbytes): 0
+        Average total size (kbytes): 0
+        Maximum resident set size (kbytes): 1928
+        Average resident set size (kbytes): 0
+        Major (requiring I/O) page faults: 0
+        Minor (reclaiming a frame) page faults: 743
+        Voluntary context switches: 1
+        Involuntary context switches: 10
+        Swaps: 0
+        File system inputs: 0
+        File system outputs: 0
+        Socket messages sent: 0
+        Socket messages received: 0
+        Signals delivered: 0
+        Page size (bytes): 4096
+        Exit status: 1
+#+END_SRC
+
+** Why message_filter is much slower than grep for large files?
+*** The performance report using perf command
+#+BEGIN_SRC
+# ========
+# captured on: Fri Mar 30 17:32:15 2018
+# hostname : dev115.athenahealth.com
+# os release : 3.8.13-118.20.2.el6uek.x86_64
+# perf version : 3.8.13-118.20.2.el6uek.x86_64
+# arch : x86_64
+# nrcpus online : 88
+# nrcpus avail : 88
+# cpudesc : Intel(R) Xeon(R) CPU E5-2699 v4 @ 2.20GHz
+# cpuid : GenuineIntel,6,79,1
+# total memory : 792083644 kB
+# cmdline : /usr/libexec/perf.3.8.13-118.20.2.el6uek.x86_64 record ./message_filter -p Starting123 /mnt/weblogs/scribe/workqueue-execution/workqueue-execution-2018-03-30_00000
+# event : name = cycles, type = 0, config = 0x0, config1 = 0x0, config2 = 0x0, excl_usr = 0, excl_kern = 0, excl_host = 0, excl_guest = 1, precise_ip = 0, id = { 541, 542, 543, 544, 545, 546, 547, 548, 549, 550, 551, 552, 553, 554, 555, 556, 557, 558, 559
+# HEADER_CPU_TOPOLOGY info available, use -I to display
+# HEADER_NUMA_TOPOLOGY info available, use -I to display
+# pmu mappings: cpu = 4, software = 1, tracepoint = 2, breakpoint = 5
+# ========
+#
+# Samples: 181K of event 'cycles'
+# Event count (approx.): 97609612007
+#
+# Overhead         Command        Shared Object                                                                                                     Symbol
+# ........  ..............  ...................  .........................................................................................................
+#
+    82.06%  message_filter  libstdc++.so.6.0.21  [.] _ZNKSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE4findEPKcmm
+     9.15%  message_filter  libc-2.23.so         [.] __memcmp_sse4_1
+     2.52%  message_filter  libc-2.23.so         [.] memchr
+     2.24%  message_filter  [kernel.kallsyms]    [k] copy_user_enhanced_fast_string
+     1.09%  message_filter  libc-2.23.so         [.] __memcpy_avx_unaligned
+     0.44%  message_filter  message_filter       [.] _ZN6scribe10FileReaderILm131072ENS_13MessageFilterINS_17SimpleConstraintsEEEEclEPKcRS3_l.constprop.17
+     0.36%  message_filter  libstdc++.so.6.0.21  [.] _ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE9_M_appendEPKcm
+     0.20%  message_filter  libstdc++.so.6.0.21  [.] memcmp@plt
+     0.18%  message_filter  [kernel.kallsyms]    [k] ii_iovec_copy_to_user
+     0.13%  message_filter  [kernel.kallsyms]    [k] find_get_page
+     0.12%  message_filter  [kernel.kallsyms]    [k] do_generic_file_read.clone.0
+     0.12%  message_filter  [kernel.kallsyms]    [k] radix_tree_lookup_slot
+     0.06%  message_filter  [kernel.kallsyms]    [k] mark_page_accessed
+     0.06%  message_filter  [kernel.kallsyms]    [k] ii_iovec_advance
+     0.05%  message_filter  [kernel.kallsyms]    [k] native_write_msr_safe
+     0.05%  message_filter  [kernel.kallsyms]    [k] apic_timer_interrupt
+     0.04%  message_filter  [kernel.kallsyms]    [k] file_read_iter_actor
+#+END_SRC
+*** What is the bottle neck?
+Our command spent 82.06% time on std::string::find. We do need a faster string find algorithm.
+ 
+** [[https://arxiv.org/abs/1612.01506][How to write a fast std::string::find algorithm]]
+   + Need better algorithms.
+   + Use SIMD instruction set.
+
+** Benchmark results for std::string::find, SSE2 strstr, and AVX2 strstr algorithms
+#+BEGIN_SRC
+[prod PTEST1] hdang@dev115:~/working/utils/benchmark> ./string
+2018-03-30 17:37:21
 Running ./string
-Run on (8 X 2200 MHz CPU s)
+Run on (88 X 2199.81 MHz CPU s)
 CPU Caches:
-  L1 Data 32K (x4)
-  L1 Instruction 32K (x4)
-  L2 Unified 262K (x4)
-  L3 Unified 6291K (x1)
+  L1 Data 32K (x44)
+  L1 Instruction 32K (x44)
+  L2 Unified 256K (x44)
+  L3 Unified 56320K (x2)
 --------------------------------------------------------
 Benchmark                 Time           CPU Iterations
 --------------------------------------------------------
-std_string_find          38 ns         38 ns   17454270
-sse2_string_find         16 ns         16 ns   44362479
+std_string_find        1152 ns       1151 ns     607947
+sse2_string_find        170 ns        170 ns    4120322
+avx2_string_find        113 ns        113 ns    6213548
+[prod PTEST1] hdang@dev115:~/working/utils/benchmark>
 #+END_SRC
 
-** Why do we see a big improvement?
-   + We use a more efficient algorithm which takes advantage of SSE2 instruction sets.
+** Benchmark results for message_filter command
 
-** Lessons learned
-   + We need to know about our use cases and data.
-   + Elegant C++ might not provide an efficient implementation.
-   + Rust might have optimized solutions for string related functionality by default. I won't dive into a war between C/C++/Rust.
-   + Straight C++ implemention might be slower that a similar C/Rust solution. However, a carefully designed C++ solution will kick ass the rest except Assembly code :).
-   
-* Can we have a better solution?
-** Show the profiling results using perf.
-** Microbenchmark results
+*** SSE2 version of message_filter
 #+BEGIN_SRC
-hdang@015249 ~/w/u/benchmark> ./string
-2018-03-26 22:11:50
-Running ./string
-Run on (8 X 2200 MHz CPU s)
-CPU Caches:
-  L1 Data 32K (x4)
-  L1 Instruction 32K (x4)
-  L2 Unified 262K (x4)
-  L3 Unified 6291K (x1)
---------------------------------------------------------
-Benchmark                 Time           CPU Iterations
---------------------------------------------------------
-std_string_find          39 ns         39 ns   13969825
-sse2_string_find         16 ns         16 ns   42873767
-avx2_string_find          9 ns          9 ns   78626949
+[prod PTEST1] hdang@dev115:~/working/scribe_parser/commands> /usr/bin/time --verbose ./message_filter -p Starting123 /mnt/weblogs/scribe/workqueue-execution/workqueue-execution-2018-03-30_00000
+        Command being timed: "./message_filter -p Starting123 /mnt/weblogs/scribe/workqueue-execution/workqueue-execution-2018-03-30_00000"
+        User time (seconds): 7.33
+        System time (seconds): 1.24
+        Percent of CPU this job got: 99%
+        Elapsed (wall clock) time (h:mm:ss or m:ss): 0:08.59 <===
+        Average shared text size (kbytes): 0
+        Average unshared data size (kbytes): 0
+        Average stack size (kbytes): 0
+        Average total size (kbytes): 0
+        Maximum resident set size (kbytes): 2800
+        Average resident set size (kbytes): 0
+        Major (requiring I/O) page faults: 0
+        Minor (reclaiming a frame) page faults: 905
+        Voluntary context switches: 16
+        Involuntary context switches: 15
+        Swaps: 0
+        File system inputs: 0
+        File system outputs: 0
+        Socket messages sent: 0
+        Socket messages received: 0
+        Signals delivered: 0
+        Page size (bytes): 4096
+        Exit status: 0
 #+END_SRC
-** Lesson learned 
-   + We need to know our systems and be able take advantage of the modern computer architecture.
-   + Benchmarking/profiling are your friends.
-* What is the fastest way to look for errors?
-** grep
-** message_parser
-** Todos
-   + [ ] Show the benchmark results in tabular format.
-   + [ ] Show some perf profiling results
-	 + Called functions.
-	 + Instrutions etc.
-   + [ ] Validate the correctness.
-* How to filter the output log using time constraints?
-** Input parameters
-   + [ ] begin: Start time.
-   + [ ] end: Stop time.
-** Some benchmark results
-   + [ ] Display in tabular format.
-* Conclusion
-  + [ ] New commands speed up our debuging/monitoring processes.
-  + [ ] Actively monitor our worker health. This is an addition to our near real-time monitoring system using graphite/grafana.
-  + [ ] Keep track of message life cycle that allow users to quickly identifying their worker issues.
+
+*** AVX2 version of message_filter
+#+BEGIN_SRC
+[prod PTEST1] hdang@dev115:~/working/scribe_parser/commands> /usr/bin/time --verbose ./message_filter -p Starting123 /mnt/weblogs/scribe/workqueue-execution/workqueue-execution-2018-03-30_00000
+        Command being timed: "./message_filter -p Starting123 /mnt/weblogs/scribe/workqueue-execution/workqueue-execution-2018-03-30_00000"
+        User time (seconds): 4.52
+        System time (seconds): 1.31
+        Percent of CPU this job got: 99%
+        Elapsed (wall clock) time (h:mm:ss or m:ss): 0:05.87 <===
+        Average shared text size (kbytes): 0
+        Average unshared data size (kbytes): 0
+        Average stack size (kbytes): 0
+        Average total size (kbytes): 0
+        Maximum resident set size (kbytes): 2800
+        Average resident set size (kbytes): 0
+        Major (requiring I/O) page faults: 0
+        Minor (reclaiming a frame) page faults: 906
+        Voluntary context switches: 23
+        Involuntary context switches: 10
+        Swaps: 0
+        File system inputs: 0
+        File system outputs: 0
+        Socket messages sent: 0
+        Socket messages received: 0
+        Signals delivered: 0
+        Page size (bytes): 4096
+        Exit status: 0
+#+END_SRC
+
+*** Performance profiling for AVX2 message_filter
+#+BEGIN_SRC
+# ========
+# captured on: Fri Mar 30 19:54:05 2018
+# hostname : dev115.athenahealth.com
+# os release : 3.8.13-118.20.2.el6uek.x86_64
+# perf version : 3.8.13-118.20.2.el6uek.x86_64
+# arch : x86_64
+# nrcpus online : 88
+# nrcpus avail : 88
+# cpudesc : Intel(R) Xeon(R) CPU E5-2699 v4 @ 2.20GHz
+# cpuid : GenuineIntel,6,79,1
+# total memory : 792083644 kB
+# cmdline : /usr/libexec/perf.3.8.13-118.20.2.el6uek.x86_64 record ./message_filter -p Starting123 /mnt/weblogs/scribe/workqueue-execution/workqueue-execution-2018-03-30_00000
+# event : name = cycles, type = 0, config = 0x0, config1 = 0x0, config2 = 0x0, excl_usr = 0, excl_kern = 0, excl_host = 0, excl_guest = 1, precise_ip = 0, id = { 717, 718, 719, 720, 721, 722, 723, 724, 725, 726, 727, 728, 729, 730, 731, 732, 733, 734, 735
+# HEADER_CPU_TOPOLOGY info available, use -I to display
+# HEADER_NUMA_TOPOLOGY info available, use -I to display
+# pmu mappings: cpu = 4, software = 1, tracepoint = 2, breakpoint = 5
+# ========
+#
+# Samples: 24K of event 'cycles'
+# Event count (approx.): 13166355714
+#
+# Overhead         Command        Shared Object                                                                                                                               Symbol
+# ........  ..............  ...................  ...................................................................................................................................
+#
+    42.05%  message_filter  message_filter       [.] _ZN5utils4avx214avx2_strstr_v2EPKcmS2_m.part.46.lto_priv.84
+    18.38%  message_filter  libc-2.23.so         [.] memchr
+    16.01%  message_filter  [kernel.kallsyms]    [k] copy_user_enhanced_fast_string
+     8.23%  message_filter  libc-2.23.so         [.] __memcpy_avx_unaligned
+     3.47%  message_filter  message_filter       [.] _ZN6scribe10FileReaderILm131072ENS_13MessageFilterINS_17SimpleConstraintsEEEEclEPKcRS3_l.constprop.17
+     2.56%  message_filter  libstdc++.so.6.0.21  [.] _ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE9_M_appendEPKcm
+     1.43%  message_filter  [kernel.kallsyms]    [k] ii_iovec_copy_to_user
+     0.97%  message_filter  [kernel.kallsyms]    [k] find_get_page
+     0.89%  message_filter  [kernel.kallsyms]    [k] radix_tree_lookup_slot
+     0.80%  message_filter  [kernel.kallsyms]    [k] do_generic_file_read.clone.0
+     0.56%  message_filter  [kernel.kallsyms]    [k] mark_page_accessed
+     0.46%  message_filter  [kernel.kallsyms]    [k] ii_iovec_advance
+     0.35%  message_filter  [kernel.kallsyms]    [k] file_read_iter_actor
+     0.34%  message_filter  message_filter       [.] memchr@plt
+     0.30%  message_filter  [kernel.kallsyms]    [k] put_page
+     0.29%  message_filter  [kernel.kallsyms]    [k] _cond_resched
+     0.23%  message_filter  message_filter       [.] _ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE9_M_appendEPKcm@plt
+     0.19%  message_filter  [kernel.kallsyms]    [k] sysret_check
+     0.16%  message_filter  libstdc++.so.6.0.21  [.] memcpy@plt
+#+END_SRC
+
+* Demo
+** Filter log messages using string pattern
+** Filter message using timestamp.
+
+* Summary
+** We have demonstrate that we can create a fast "simple" grep command that can run as fast as the best grep like commands.
+** Profiling and benchmarking tools are your friends when troubleshooting performance issues.
+** C++ is still the king if we know what we do.
+
+* Plan
+** A tool that can 
+   + Automatically identify new issues.
+   + Create daily/hourly reports for web log data.
+   + Actively monitoring our system in near realtime.
+** Provide a backend service that 
+   + Allow users to search for log messages fast.
+   + Better aglimse command.
+** Support regular expression.
+
