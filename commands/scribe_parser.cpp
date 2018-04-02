@@ -64,9 +64,9 @@ int main(int argc, char *argv[]) {
     bool parse_error(vm.count("error"));
     bool parse_info(vm.count("info"));
 
-    scribe::TimeAll tcons;
-    utils::baseline::Contains scons();
-    utils::AllPatterns pcons();
+    // scribe::TimeAll tcons;
+    // utils::baseline::Contains scons<decltype(params)>();
+    // utils::AllPatterns pcons();
 
 
     // auto parser = scribe::BasicParser<decltype(tcons), decltype(scons), decltype(pcons)>(

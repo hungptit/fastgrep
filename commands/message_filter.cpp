@@ -24,7 +24,7 @@ namespace {
     }
 
     template <typename Constraints> void filter(const scribe::MessageFilterParams &params) {
-        constexpr size_t BUFFER_SIZE = 1 << 17;
+        constexpr size_t BUFFER_SIZE = 1 << 16;
         Constraints cons(params);
         using MessageFilter = typename scribe::MessageFilter<Constraints>;
         MessageFilter filter(params);
@@ -80,6 +80,7 @@ int main(int argc, char *argv[]) {
         std::cout << "Usage: message_filter [options]\n";
         std::cout << desc;
         std::cout << "\nExamples:\n";
+        std::cout << "\tmessage_filter --begin \"04-02-2018 00:31:00\" --end \"04-02-2018 00:31:16\" -p '\"LEVEL\":\"error\"' /mnt/weblogs/scribe/workqueue-execution/workqueue-execution-2018-04-02_00000\n";
         return EXIT_SUCCESS;
     }
 
@@ -90,7 +91,7 @@ int main(int argc, char *argv[]) {
         parse_timestamp_value(end_time, utils::MAX_TIME);
 
     // Display input arguments in verbose mode.
-    if (vm.count("verbose")) params.print();
+    if (vm.count("verbose")) scribe::print_filter_params(params);
 
     // Search for desired lines from given log files.
     exec(params);

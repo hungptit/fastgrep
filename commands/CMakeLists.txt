@@ -48,16 +48,16 @@ add_cxx_compiler_flag(-flto)
 # add_cxx_compiler_flag(-Werror RELWITHDEBINFO)
 # add_cxx_compiler_flag(-Werror MINSIZEREL)
 
-add_cxx_compiler_flag(-pedantic)
+# add_cxx_compiler_flag(-pedantic)
 # add_cxx_compiler_flag(-pedantic-errors)
 
 # add_cxx_compiler_flag(-Wshorten-64-to-32)
 # add_cxx_compiler_flag(-Wfloat-equal)
 # add_cxx_compiler_flag(-Wint-to-void-pointer-cast)
 
-add_cxx_compiler_flag(-Wshorten-64-to-32)
+# add_cxx_compiler_flag(-Wshorten-64-to-32)
 # add_cxx_compiler_flag(-Wfloat-equal)
-add_cxx_compiler_flag(-Wint-to-void-pointer-cast)
+# add_cxx_compiler_flag(-Wint-to-void-pointer-cast)
 
 add_cxx_compiler_flag(-fstrict-aliasing)
 if (HAVE_CXX_FLAG_FSTRICT_ALIASING)
@@ -98,10 +98,12 @@ endif (Boost_NO_SYSTEM_PATHS)
 find_package(Boost REQUIRED system filesystem program_options)
 
 # Build all
+set(CMAKE_INSTALL_PREFIX "$ENV{HOME}")
 if (Boost_FOUND)
   set(COMMAND_SRC_FILES scribe_parser line_count message_filter linestats)
   foreach (src_file ${COMMAND_SRC_FILES})
 	ADD_EXECUTABLE(${src_file} ${src_file}.cpp)
-	TARGET_LINK_LIBRARIES(${src_file}  ${Boost_LIBRARIES} ${LIB_JEMALLOC} -lpthread -ldl)
+	TARGET_LINK_LIBRARIES(${src_file}  ${Boost_LIBRARIES} -lpthread -ldl)
   endforeach (src_file)
+  INSTALL_PROGRAMS("/bin/" FILES ${COMMAND_SRC_FILES})
 endif (Boost_FOUND)

@@ -13,7 +13,7 @@ namespace scribe {
     // A struct that read file content in fixed size chunks and parse them to a parser.
     template <size_t BUFFER_SIZE, typename Parser> class FileReader {
       public:
-        void operator()(const char *datafile, Parser &parser, const size_t offset = 0) {
+        void operator()(const char *datafile, Parser &parser, const long offset = 0) {
             char read_buffer[BUFFER_SIZE + 1];
             int fd = ::open(datafile, O_RDONLY);
 
@@ -34,6 +34,9 @@ namespace scribe {
                 }
             }
 
+			// Let the kernel know that we are going to read sequentially to the end of a file.
+			posix_fadvise(fd, 0, 0, POSIX_FADV_SEQUENTIAL);
+			
             // Read data into a string
             while (true) {
                 auto nbytes = ::read(fd, read_buffer, BUFFER_SIZE);
@@ -53,24 +56,5 @@ namespace scribe {
             // Close our file.
             ::close(fd);
         }
-    };
-
-    class Console {
-        Console() = default;
-        ~Console() { fmt::print("{0}", buffer); }
-
-        void operator()(const char *begin, const char *end) {
-            buffer.append(begin, end - begin);
-            if (buffer.size() > MAX_SIZE) { print(); }
-        }
-
-        void print() {
-            fmt::print("{}", buffer);
-            buffer.clear();
-        }
-
-      private:
-        std::string buffer;
-        static constexpr unsigned int MAX_SIZE = 1 << 16;
     };
 } // namespace scribe
