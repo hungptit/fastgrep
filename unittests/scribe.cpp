@@ -11,15 +11,13 @@
 
 #include <time.h>
 
-#include "utils/timeutils.hpp"
 #include "utils/dumper.hpp"
+#include "utils/timeutils.hpp"
 
 #define CATCH_CONFIG_MAIN
 #include "catch/catch.hpp"
 
-
-namespace {
-}
+namespace {}
 
 using Catch::Matchers::Equals;
 
@@ -73,5 +71,4 @@ TEST_CASE("Parser a scribe message", "") {
     CHECK_THAT(msg1.pool, Equals("generic.work"));
     CHECK(msg1.pid == 123456);
     CHECK(msg1.timestamp == 1520528400);
-
 }
