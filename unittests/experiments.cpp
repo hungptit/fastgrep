@@ -9,8 +9,7 @@
 void parse(char *input_text) {
     const size_t AST_BUFFER_SIZE = 500;
     size_t ast_buffer[AST_BUFFER_SIZE];
-
-    const sajson::document &doc = parse(
+    const sajson::document &doc = sajson::parse(
         // The bounded allocation mode attempts to fit the AST into the given
         // fixed-size buffer, returning ERROR_OUT_OF_MEMORY if it is not large
         // enough to parse this document.
@@ -33,21 +32,14 @@ void parse(char *input_text) {
     switch (node.get_type()) {
     case TYPE_NULL:
         break;
-
     case TYPE_FALSE:
-
         break;
-
     case TYPE_TRUE:
-
         break;
-
     case TYPE_ARRAY: {
         fmt::print("Found {}\n", "Array");
-
         break;
     }
-
     case TYPE_OBJECT: {
         fmt::print("Found {}\n", "Object");
         auto length = node.get_length();
@@ -57,10 +49,10 @@ void parse(char *input_text) {
         const sajson::string prefix("PREFIX", 6);
         const sajson::string raw_error("PREFIX", 6);
 
+		// Display node's names and values
         fmt::print("{0}: {1}\n", level.data(), node.get_value_of_key(level).as_cstring());
         fmt::print("{0}: {1}\n", prefix.data(), node.get_value_of_key(prefix).as_cstring());
         fmt::print("{0}: {1}\n", message.data(), node.get_value_of_key(message).as_cstring());
-
         break;
     }
 
@@ -91,8 +83,6 @@ struct JsonExplorer {
 
         // Traverse JSON data struture.
         traverse(doc.get_root());
-
-
 
         return true;
     }
@@ -134,12 +124,12 @@ struct JsonExplorer {
         }
     }
 
-	void print() const {
-		fmt::print("Keys: ");
-        // Display results;
+    void print() const {
+        fmt::print("Keys: ");
         std::for_each(keys.cbegin(), keys.cend(), [](auto item) { fmt::print("{0} ", item); });
         fmt::print("\n");
 	}
+
 
   private:
     std::unordered_set<std::string> keys;
@@ -148,10 +138,13 @@ struct JsonExplorer {
 };
 
 int main(int argc, char *argv[]) {
-    std::string buffer = ioutils::read<std::string>(argv[1]);
-    fmt::print("buffer: {}\n", buffer);
-    JsonExplorer explorer;
-    explorer(&buffer[0]);
-	explorer.print();
+    for (int idx = 1; idx < argc; ++idx) {
+        std::string buffer = ioutils::read<std::string>(argv[1]);
+        fmt::print("buffer: {}\n", buffer);
+        JsonExplorer explorer;
+        explorer(&buffer[0]);
+        explorer.print();
+    }
+
     return EXIT_SUCCESS;
 }

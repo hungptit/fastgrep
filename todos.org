@@ -59,4 +59,9 @@
 	+ Get the command from the master.
 	+ Execute the command.
 * How to search for a substring efficiently
-**
+* Use cases
+** Skip patterns
+** Filter message by time stamp.
+** Save found message to files in different format.
+** Check message life cycle.
+** Clustering messages

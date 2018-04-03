@@ -1,143 +1,92 @@
 #pragma once
 
 #include <sstream>
+#include <string>
 #include <vector>
 
-#include "header_parser.hpp"
-
-#include "folly/FBString.h"
+#include "utils/matchers.hpp"
+#include "utils/matchers_avx2.hpp"
+#include "utils/memchr.hpp"
+#include "utils/timestamp.hpp"
+#include "utils/timeutils.hpp"
 
 namespace scribe {
-    struct FilterParams {
-        FilterParams(const std::string &start_time, const std::string &stop_time, const std::string &patt) {
-            start = start_time.empty() ? 0 : parse(start_time);
-            stop = stop_time.empty() ? 0 : parse(stop_time);
-            pattern = patt;
-        }
-
-        std::time_t parse(const std::string &timestamp) {
-            struct tm tm;
-            const char *ts = &timestamp[0];
-            strptime(ts, "%Y-%m-%d %H:%M:%S", &tm);
-            tm.tm_isdst = 0; // TODO: Disable day light time saving for now.
-            return mktime(&tm);
-        }
-
-        const char *get_timestamp(const std::time_t t) {
-            struct tm *timestamp = localtime(&t);
-            strftime(buffer, BUFFER_SIZE, "%Y-%m-%d %H:%M:%S", timestamp);
-            return buffer;
-        }
-
-        void print() {
-            if (start) fmt::print("Start time: {}\n", get_timestamp(start));
-            if (stop) fmt::print("Stop time: {}\n", get_timestamp(stop));
-            if (!pattern.empty()) fmt::print("Search pattern: {}\n", pattern);
-        }
-
-        std::time_t start;
-        std::time_t stop;
+    struct MessageFilterParams {
+        utils::Timestamp begin;
+        utils::Timestamp end;
+        std::string server;
+        std::string pool;
         std::string pattern;
+        std::vector<std::string> infiles;
+        std::string outfile;
 
-        // Temporary variables
-        static size_t constexpr BUFFER_SIZE = 20;
-        char buffer[20];
+        MessageFilterParams()
+            : begin(), end(), server(), pool(), pattern(), infiles(), outfile() {}
     };
 
-    // Time constraints.
-    struct ScribeHeaderTimeConstraints {
-        ScribeHeaderTimeConstraints(const std::time_t begin, std::time_t end) : start(begin), stop(end) {}
-        bool operator()(std::time_t t) {
-            if ((start == 0) && (stop == 0)) return true;
-            if (stop == 0) return t >= start;
-            return (t >= start) && (t <= stop);
-        }
-        std::time_t start = 0;
-        std::time_t stop = 0;
+    void print_filter_params(const MessageFilterParams &params) {
+        utils::TimePrinter time_printer("%m-%d-%Y %H:%M:%S");
+        fmt::print("Begin time: {}\n", time_printer(params.begin.to_tm()));
+        fmt::print("End time: {}\n", time_printer(params.end.to_tm()));
+        if (!params.server.empty()) fmt::print("Server name: \n", params.server);
+        if (!params.pool.empty()) fmt::print("Pool name: {}\n", params.pool);
+        if (!params.pattern.empty()) fmt::print("Search pattern: {}\n", params.pattern);
+    }
+
+    // No constraint.
+    struct All {
+        All(const MessageFilterParams &) {}
+        bool operator()(const std::string &line) { return true; }
     };
 
-    // Pattern constraint.
-    struct ScribeMessagePattern {
-        using String = std::string;
-        ScribeMessagePattern(const String &s) : pattern(s) {}
-        bool operator()(const String &buffer) {
-            if (pattern.empty()) return true;
-            return buffer.find(pattern) != String::npos;
-        }
-        String pattern;
-    };
-
-    // Parse timestamp in the scribe header.
-    struct ParseScribeTimestamp {
-        std::time_t operator()(const char *begin, const char *end) {
-            if (end < (begin + BUFFER_SIZE)) {
-                fmt::MemoryWriter writer;
-                writer << "Invalid timestamp string: " << std::string(begin, end - begin);
-                throw(std::runtime_error(writer.str()));
-            }
-            memcpy(buffer, begin, BUFFER_SIZE);
-            strptime(buffer, "%m/%d/%Y %H:%M:%S", &tm);
-            tm.tm_isdst = 0; // TODO: Disable day light time saving for now.
-            std::time_t t = mktime(&tm);
-            // fmt::print("Timestamp: {}\n", get_timestamp(t));
-            return t;
-        }
-
-        const char *get_timestamp(std::time_t t) {
-            struct tm *timestamp = localtime(&t);
-            strftime(buffer, BUFFER_SIZE, "%Y-%m-%d %H:%M:%S", timestamp);
-            return buffer;
-        }
-
-        static size_t constexpr BUFFER_SIZE = 20;
-        char buffer[20];
-        struct tm tm;
-    };
-
-    struct AllMessages {
-        template <typename String> bool operator()(const String &) { return true; }
-    };
-
-    // Search for a pattern using string::find.
-    template <typename String> class Patterns {
+    // A simple pattern constraint
+    class SimpleConstraints {
       public:
-        Patterns(const String &patt) : pattern(patt){};
-        bool operator()(const String &buffer) { return buffer.find(pattern) != String::npos; }
+        using pattern_type = utils::avx2::Contains;
+        explicit SimpleConstraints(const MessageFilterParams &params)
+            : contains(params.pattern) {}
+        SimpleConstraints(const SimpleConstraints &obj) = delete;
+        bool operator()(const std::string &line) { return contains(line); }
 
       private:
-        String pattern;
+        pattern_type contains; // Search for a given string pattern
     };
 
-    template <typename String> class Patterns_fast {
+    // A pattern + timestamp constraint.
+    class BasicConstraints {
       public:
-        Patterns_fast(const String &patt) : pattern(patt){};
+        using pattern_type = utils::avx2::Contains;
+        using time_type = utils::Timestamp;
+        using time_constraint_type = typename utils::Between<time_type>;
 
-        bool operator()(const char *begin, const char *end) {
-            const char *ptr = begin;
-            const char *pattern_begin = &pattern[0];
-            const char *pattern_end = pattern_begin + pattern.size();
-            const char begin_char = pattern_begin[0];
-            const size_t N = pattern.size();
-            while ((ptr = static_cast<const char *>(memchr(ptr, begin_char, end - ptr)))) {
-                if (strncmp(ptr, pattern_begin, N) == 0) { return true; }
-                ++ptr;
-            }
-            return false;
+        BasicConstraints(const MessageFilterParams &params)
+            : contains(params.pattern), between(params.begin, params.end) {}
+        bool operator()(const std::string &line) {
+            if (line.size() < 20) return false; // Skip invalid line
+            // Check the time constraints fist since it is cheaper than pattern constraint.
+            auto const t = utils::parse_timestamp<time_type>(line.data() + 1);
+            if (!between(t)) return false;
+            return contains(line);
         }
 
       private:
-        String pattern;
+        pattern_type contains; // Search for a given string pattern
+        time_constraint_type between;
     };
 
     // Filter message that match given constraints.
-    template <typename Constraint, typename String> class MessageFilter {
+    template <typename Constraints> class MessageFilter {
       public:
-        MessageFilter(Constraint &&cons) : buffer(), lines(0), constraints(std::forward<Constraint>(cons)) {
+        explicit MessageFilter(const MessageFilterParams &params)
+            : buffer(), lines(0), constraints(params) {
             buffer.reserve(1 << 12);
         }
-        MessageFilter(const MessageFilter &value) = delete; // We do not support copy constructor.
+
+        explicit MessageFilter(const MessageFilter &value) =
+            delete; // We do not support copy constructor.
+
         ~MessageFilter() {
-            if (!buffer.empty()) print();
+            if (!buffer.empty()) process();
         }
 
         void operator()(const char *begin, const char *end) {
@@ -145,14 +94,14 @@ namespace scribe {
             const char *ptr = begin;
 
             // Parse line by line
-            while ((ptr = static_cast<const char *>(memchr(ptr, EOL, end - ptr)))) {
+            while ((ptr = static_cast<const char *>(memchr_avx2(ptr, EOL, end - ptr)))) {
                 buffer.append(start, ptr - start + 1);
 
                 // Increase line counter
                 ++lines;
 
                 // Parse the data
-                print();
+                process();
 
                 // Update start
                 start = ++ptr;
@@ -166,12 +115,12 @@ namespace scribe {
         }
 
       private:
-        String buffer;
+        std::string buffer;
         size_t lines;
-        Constraint constraints;
-
-        void print() {
-            if (constraints(buffer)) { fmt::print("{}", buffer.data()); }
+        Constraints constraints;
+        static constexpr char EOL = '\n';
+        void process() {
+            if (constraints(buffer)) fmt::print("{}", buffer.data());
             buffer.clear(); // Reset the buffer.
         }
     };
