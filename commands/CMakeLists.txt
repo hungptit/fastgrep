@@ -104,7 +104,7 @@ SET(LIB_HS_RUNTIME "${EXTERNAL_DIR}/lib64/libhs_runtime.a")
 # Build all
 set(CMAKE_INSTALL_PREFIX "$ENV{HOME}")
 if (Boost_FOUND)
-  set(COMMAND_SRC_FILES scribe_parser line_count message_filter linestats)
+  set(COMMAND_SRC_FILES fastgrep linestats)
   foreach (src_file ${COMMAND_SRC_FILES})
 	ADD_EXECUTABLE(${src_file} ${src_file}.cpp)
 	TARGET_LINK_LIBRARIES(${src_file}  ${Boost_LIBRARIES} ${LIB_HS} ${LIB_HS_RUNTIME})

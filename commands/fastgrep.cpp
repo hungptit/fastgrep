@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
 		("verbose,v", "Display verbose information.")
 		("info", "Display information messages.")
 		("error", "Display error messages.")
-		("regex", "Support regular expression using hyperscan.")
+		("no-regex", "Do not use regex engine for pattern matching.")
 		("begin,b", po::value<std::string>(&begin_time), "Begin time in 'mm-dd-yyyy hh:mm:ss' format.")
 		("end,e", po::value<std::string>(&end_time), "End time in 'mm-dd-yyyy hh:mm:ss' format")
 		("pattern,p", po::value<std::string>(&params.pattern), "Search pattern")
@@ -80,11 +80,11 @@ int main(int argc, char *argv[]) {
     po::notify(vm);
 
     if (vm.count("help")) {
-        std::cout << "Usage: message_filter [options]\n";
+        std::cout << "Usage: fastgrep [options] pattern data.log\n";
         std::cout << desc;
         std::cout << "\nExamples:\n";
         std::cout
-            << "\tmessage_filter --begin \"04-02-2018 00:31:00\" --end \"04-02-2018 00:31:16\" "
+            << "\tfastgrep --begin \"04-02-2018 00:31:00\" --end \"04-02-2018 00:31:16\" "
                "-p '\"LEVEL\":\"error\"' "
                "/mnt/weblogs/scribe/workqueue-execution/workqueue-execution-2018-04-02_00000\n";
         return EXIT_SUCCESS;
@@ -98,10 +98,10 @@ int main(int argc, char *argv[]) {
     if (vm.count("verbose")) scribe::print_filter_params(params);
 
     // Search for desired lines from given log files.
-    if (vm.count("regex")) {
-        exec<utils::hyperscan::RegexMatcher>(params);
-    } else {
+    if (vm.count("no-regex")) {
         exec<utils::baseline::Contains>(params);
+    } else {
+        exec<utils::hyperscan::RegexMatcher>(params);
     }
 
 	// Return
