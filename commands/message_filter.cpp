@@ -7,18 +7,19 @@
 #include "message_filter.hpp"
 #include "utils/matchers.hpp"
 #include "utils/matchers_avx2.hpp"
+#include "utils/regex_matchers.hpp"
 #include "utils/timestamp.hpp"
 
 namespace {
     auto parse_timestamp_value(const std::string &timestr, utils::Timestamp default_value) {
-		constexpr size_t TIMESTAMP_LENGTH = 19;
+        constexpr size_t TIMESTAMP_LENGTH = 19;
         if (timestr.empty()) {
             return default_value;
         } else {
             if (timestr.size() == TIMESTAMP_LENGTH) {
                 return utils::parse_timestamp<utils::Timestamp>(timestr.data());
             } else {
-                throw std::runtime_error(std::string("Invalid time string: ") + timestr );
+                throw std::runtime_error(std::string("Invalid time string: ") + timestr);
             }
         }
     }
@@ -32,23 +33,24 @@ namespace {
         for (auto afile : params.infiles) { reader(afile.c_str(), filter); }
     }
 
-    void exec(const scribe::MessageFilterParams &params) {
+    template <typename T> void exec(const scribe::MessageFilterParams &params) {
         const int case_number = ((!params.pattern.empty()) << 2) +
-                                ((params.begin != utils::MIN_TIME) << 1) + (params.end != utils::MAX_TIME);
-		// fmt::print("case_number: {}\n", case_number);
+                                ((params.begin != utils::MIN_TIME) << 1) +
+                                (params.end != utils::MAX_TIME);
+        // fmt::print("case_number: {}\n", case_number);
         switch (case_number) {
         case 0:
             filter<scribe::All>(params);
             break;
         case 4:
-            filter<scribe::SimpleConstraints>(params);
+            filter<typename scribe::SimpleConstraints<T>>(params);
             break;
         default:
-            filter<scribe::BasicConstraints>(params);
+            filter<typename scribe::BasicConstraints<T>>(params);
             break;
         }
     }
-}
+} // namespace
 
 int main(int argc, char *argv[]) {
     namespace po = boost::program_options;
@@ -60,10 +62,11 @@ int main(int argc, char *argv[]) {
     desc.add_options()
         ("help,h", "Print this help")
 		("verbose,v", "Display verbose information.")
-		("info,i", "Display information messages.")
-		("error,e", "Display error messages.")
-		("begin,t", po::value<std::string>(&begin_time), "Begin time in 'mm-dd-yyyy hh:mm:ss' format.")
-		("end,s", po::value<std::string>(&end_time), "End time in 'mm-dd-yyyy hh:mm:ss' format")
+		("info", "Display information messages.")
+		("error", "Display error messages.")
+		("regex", "Support regular expression using hyperscan.")
+		("begin,b", po::value<std::string>(&begin_time), "Begin time in 'mm-dd-yyyy hh:mm:ss' format.")
+		("end,e", po::value<std::string>(&end_time), "End time in 'mm-dd-yyyy hh:mm:ss' format")
 		("pattern,p", po::value<std::string>(&params.pattern), "Search pattern")
         ("log-files,l", po::value<std::vector<std::string>>(&params.infiles), "Scribe log files")
         ("output,o", po::value<std::string>(&params.outfile), "Output file");
@@ -80,19 +83,27 @@ int main(int argc, char *argv[]) {
         std::cout << "Usage: message_filter [options]\n";
         std::cout << desc;
         std::cout << "\nExamples:\n";
-        std::cout << "\tmessage_filter --begin \"04-02-2018 00:31:00\" --end \"04-02-2018 00:31:16\" -p '\"LEVEL\":\"error\"' /mnt/weblogs/scribe/workqueue-execution/workqueue-execution-2018-04-02_00000\n";
+        std::cout
+            << "\tmessage_filter --begin \"04-02-2018 00:31:00\" --end \"04-02-2018 00:31:16\" "
+               "-p '\"LEVEL\":\"error\"' "
+               "/mnt/weblogs/scribe/workqueue-execution/workqueue-execution-2018-04-02_00000\n";
         return EXIT_SUCCESS;
     }
 
     // Process input parameters
-    params.begin =
-        parse_timestamp_value(begin_time, utils::MIN_TIME);
-    params.end =
-        parse_timestamp_value(end_time, utils::MAX_TIME);
+    params.begin = parse_timestamp_value(begin_time, utils::MIN_TIME);
+    params.end = parse_timestamp_value(end_time, utils::MAX_TIME);
 
     // Display input arguments in verbose mode.
     if (vm.count("verbose")) scribe::print_filter_params(params);
 
     // Search for desired lines from given log files.
-    exec(params);
+    if (vm.count("regex")) {
+        exec<utils::hyperscan::RegexMatcher>(params);
+    } else {
+        exec<utils::baseline::Contains>(params);
+    }
+
+	// Return
+	return EXIT_SUCCESS;
 }

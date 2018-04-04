@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include "hs/hs.h"
 #include "utils/matchers.hpp"
 #include "utils/matchers_avx2.hpp"
 #include "utils/memchr.hpp"
@@ -40,9 +41,9 @@ namespace scribe {
     };
 
     // A simple pattern constraint
-    class SimpleConstraints {
+    template <typename T> class SimpleConstraints {
       public:
-        using pattern_type = utils::avx2::Contains;
+        using pattern_type = T;
         explicit SimpleConstraints(const MessageFilterParams &params)
             : contains(params.pattern) {}
         SimpleConstraints(const SimpleConstraints &obj) = delete;
@@ -53,9 +54,9 @@ namespace scribe {
     };
 
     // A pattern + timestamp constraint.
-    class BasicConstraints {
+    template <typename T> class BasicConstraints {
       public:
-        using pattern_type = utils::avx2::Contains;
+        using pattern_type = T;
         using time_type = utils::Timestamp;
         using time_constraint_type = typename utils::Between<time_type>;
 
