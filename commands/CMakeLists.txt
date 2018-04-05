@@ -98,8 +98,8 @@ endif (Boost_NO_SYSTEM_PATHS)
 find_package(Boost REQUIRED system filesystem program_options)
 
 # Hyperscan
-SET(LIB_HS "${EXTERNAL_DIR}/lib64/libhs.a")
-SET(LIB_HS_RUNTIME "${EXTERNAL_DIR}/lib64/libhs_runtime.a")
+SET(LIB_HS "${EXTERNAL_DIR}/lib/libhs.a")
+SET(LIB_HS_RUNTIME "${EXTERNAL_DIR}/lib/libhs_runtime.a")
 
 # Build all
 set(CMAKE_INSTALL_PREFIX "$ENV{HOME}")
