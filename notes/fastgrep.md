@@ -104,11 +104,35 @@ class: center, middle
 ---
 # Benchmark results
 
-* Third solution is the clear winner.
+``` text
+Celero
+Timer resolution: 0.001000 us
+-----------------------------------------------------------------------------------------------------------------------------------------------
+     Group      |   Experiment    |   Prob. Space   |     Samples     |   Iterations    |    Baseline     |  us/Iteration   | Iterations/sec  |
+-----------------------------------------------------------------------------------------------------------------------------------------------
+read            | iostream        |               0 |              10 |               1 |         1.00000 |      9185.00000 |          108.87 |
+read            | boost_memmap    |               0 |              10 |               1 |         0.04725 |       434.00000 |         2304.15 |
+read            | read_2_10       |               0 |              10 |               1 |         0.10659 |       979.00000 |         1021.45 |
+read            | read_2_12       |               0 |              10 |               1 |         0.04377 |       402.00000 |         2487.56 |
+read            | read_2_13       |               0 |              10 |               1 |         0.04268 |       392.00000 |         2551.02 |
+read            | read_2_14       |               0 |              10 |               1 |         0.03201 |       294.00000 |         3401.36 |
+read            | read_2_15       |               0 |              10 |               1 |         0.03125 |       287.00000 |         3484.32 |
+read            | read_2_16       |               0 |              10 |               1 |         0.03081 |       283.00000 |         3533.57 |
+read            | read_2_17       |               0 |              10 |               1 |         0.02961 |       272.00000 |         3676.47 |
+read            | read_2_18       |               0 |              10 |               1 |         0.02994 |       275.00000 |         3636.36 |
+read            | read_2_19       |               0 |              10 |               1 |         0.03081 |       283.00000 |         3533.57 |
+read            | read_2_20       |               0 |              10 |               1 |         0.03125 |       287.00000 |         3484.32 |
+Complete.
+```
 
-* The memory mapped solution has a very good performance. We should use this by default.
+--- 
+# Summary
 
-* The first solution's complexity is O(2n) and it is 20x slower than memory mapped solution. We should not use it in serious applications.
+* Our simple benchmark shown that the third solution is the winner and the optimum buffer size is around 64KBytes. We will use this value a default value for our buffer size.
+
+* The memory mapped solution has a very good performance.
+
+* The first solution is 20x slower than that of the memory mapped solution. We should not use it in serious applications.
 
 ---
 # Our final file reading algorithm
@@ -139,6 +163,16 @@ class: center, middle
 ---
 # Is our file reading algorithm fast?
 
+To show that our file reading algorithm is fast enough we will create a simple command which is similar to "wc -l" command and benchmark it with a reasonable big text file.
+  
+* Compute file size.
+
+* Count the number of lines.
+
+* Compute the maximum and minimum length of lines.
+ 
+---
+# A line counting filter.
 ``` c++
 class LineStats {
 public:
@@ -210,11 +244,20 @@ private:
 
 * We have created a generic file reading algorithm which might be one of the fastest available solution. See this [link](https://lemire.me/blog/2012/06/26/which-is-fastest-read-fread-ifstream-or-mmap/ "Lemire's blog") for more information.
 
-* Our benchmark results have shown that linestats command is faster than wc.
+* Our benchmark results have shown that *linestats* command is about 50% faster than *wc -l* .
 
 ---
 class: center, middle
 # How to write a fast string search algorithm?
+
+---
+# First version of [fastgrep](https://github.com/hungptit/scribe_parser "A very fast grep like command")
+
+We have already had a fast file reading algorithm and to be able to create our first working version of fastgrep command we need below classes
+
+* MessageFilter: This class is called within the file reading algorithm. It will take a string buffer break it into lines then display lines that match a given string pattern.
+
+* utils::Contains: This class check that a pattern is matched with a given text line.
 
 ---
 # A message filter class
@@ -270,7 +313,7 @@ class: center, middle
 ```
 ---
 class: center, middle
-# Benchmark results again grep
+# Benchmark results
 
 ---
 # grep
@@ -328,6 +371,8 @@ class: center, middle
 
 ---
 # Why our fastgrep command is very slow?
+
+Benchmark results have shown that our fastgrep command is about 7x slower than GNU grep. Below is the profiling results obtained using perf command.
 
 ``` text
 # Overhead         Command        Shared Object
@@ -671,21 +716,24 @@ class: center, middle
 # Demo
 
 ---
+# Summary
+
+* The standard C++ functions for string handling are inefficient i.e std::find, std::ifstream. 
+
+* Our benchmark results show that our fastgrep command is at least as fast as grep and best grep like command such as ag and ripgrep.
+
+* Creating efficient solutions using C++ is not a trivial task. 
+
+	* A bad C++ code might be 10x slower than using other a similar code using other compiled languages such as C, Rust, or Go.
+
+	* A good C++ code will be the fastest solution with very high reusability.
+
+---
 # Todo list
 
-* Improve usability of fastgrep command.
+* Improve the usability of fastgrep command.
 
-* Create a fast code search tool.
-
-* Create an weblog monitoring system that can automatically
-
-  * Identify issues from our scribe weblog.
-
-  * Create hourly/daily report.
-
-  * Tracking message life cycles.
-
-  * Fast weblog search tool.
+* Update the build system so users can build it with minimum amount of work.
 
 ---
 class: center, middle
@@ -696,14 +744,13 @@ class: center, middle
 
 * SSE2/AVX2 code is the modified version of [sse4-strstr](https://github.com/WojciechMula/sse4-strstr "sse4-strstr") 
 
-* The fast file reading algorithm idea is originated from this [blog post](https://lemire.me/blog/2012/06/26/which-is-fastest-read-fread-ifstream-or-mmap/ "Lemire's blog") and GNU wc command.
+* I have learned the idea of a fast file reading algorithm idea from this [blog post](https://lemire.me/blog/2012/06/26/which-is-fastest-read-fread-ifstream-or-mmap/ "Lemire's blog") and [GNU wc](https://www.gnu.org/software/coreutils/manual/html_node/wc-invocation.html "wc") command.
 * Below libraries and tools have been used in my project:
-  * Catch2
-  * hyperscan
-  * utils
-  * ioutils
-  * Boost
-  * STL
-  * fmt
-  * cereal
-  * CMake
+  * [Catch2](https://github.com/catchorg/Catch2 "Catch2")
+  * [hyperscan](https://www.hyperscan.io/ "hyperscan")
+  * [utils](https://github.com/hungptit/utils "utils")
+  * [ioutils](https://github.com/hungptit/ioutils "A blazing fast file I/O library")
+  * [Boost](https://www.boost.org/ "Boost libraries")
+  * [fmt](https://github.com/fmtlib/fmt "A modern formatting library")
+  * [cereal](https://github.com/USCiLab/cereal "A C++11 library for serialization")
+  * [CMake](https://cmake.org/ "CMake")
