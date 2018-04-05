@@ -1,14 +1,14 @@
-#include "fmt/format.h"
-#include <iostream>
-#include <string>
-
 #include "algorithms.hpp"
 #include "boost/program_options.hpp"
+#include "fmt/format.h"
 #include "message_filter.hpp"
 #include "utils/matchers.hpp"
 #include "utils/matchers_avx2.hpp"
 #include "utils/regex_matchers.hpp"
 #include "utils/timestamp.hpp"
+#include <algorithm>
+#include <iostream>
+#include <string>
 
 namespace {
     auto parse_timestamp_value(const std::string &timestr, utils::Timestamp default_value) {
@@ -57,6 +57,7 @@ int main(int argc, char *argv[]) {
     po::options_description desc("Allowed options");
     std::string begin_time, end_time;
     scribe::MessageFilterParams params;
+    std::vector<std::string> args;
 
     // clang-format off
     desc.add_options()
@@ -67,14 +68,13 @@ int main(int argc, char *argv[]) {
 		("no-regex", "Do not use regex engine for pattern matching.")
 		("begin,b", po::value<std::string>(&begin_time), "Begin time in 'mm-dd-yyyy hh:mm:ss' format.")
 		("end,e", po::value<std::string>(&end_time), "End time in 'mm-dd-yyyy hh:mm:ss' format")
-		("pattern,p", po::value<std::string>(&params.pattern), "Search pattern")
-        ("log-files,l", po::value<std::vector<std::string>>(&params.infiles), "Scribe log files")
+        ("arguments,a", po::value<std::vector<std::string>>(&args), "Search pattern and files")
         ("output,o", po::value<std::string>(&params.outfile), "Output file");
     // clang-format on
 
     // Parse input arguments
     po::positional_options_description p;
-    p.add("log-files", -1);
+    p.add("arguments", -1);
     po::variables_map vm;
     po::store(po::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
     po::notify(vm);
@@ -91,6 +91,13 @@ int main(int argc, char *argv[]) {
     }
 
     // Process input parameters
+    if (args.size() < 2) {
+        throw std::runtime_error("You must profile search pattern and files!");
+    }
+
+    params.pattern = args[0];
+    std::for_each(++args.cbegin(), args.cend(),
+                  [&params](auto item) { params.infiles.emplace_back(item); });
     params.begin = parse_timestamp_value(begin_time, utils::MIN_TIME);
     params.end = parse_timestamp_value(end_time, utils::MAX_TIME);
 
@@ -104,6 +111,5 @@ int main(int argc, char *argv[]) {
         exec<utils::hyperscan::RegexMatcher>(params);
     }
 
-	// Return
-	return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }
