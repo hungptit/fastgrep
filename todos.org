@@ -16,8 +16,9 @@
    + Extract JSON string.
    + Parse JSON string and update possible key list.
 ** Data structure for scribe log
-*** Message
-*** ScribeHeader
+*** LogMessage
+*** MessageHeader
+*** MessageBody
 ** Multi-threaded log parser.
 *** Producer
 	+ Read trunk of data
@@ -36,17 +37,8 @@
    + Update message lifecycle table. A vector + a hash table.
    + Print out summary information.
    + Print out outlier.
-** Use ApacheThrift to comunicate between workers and master.
-*** Master
-	+ Receive request from clients.
-	+ Analyze request and send it to the right worker.
-	+ Aggregate results and send back to the clients.
-*** Workers
-	+ Get the command from the master.
-	+ Execute the command.
-* How to search for a substring efficiently
 * Use cases
-** Skip patterns
+** Support skip patterns
 ** Filter message by time stamp.
 ** Save found message to files in different format.
 ** Check message life cycle.

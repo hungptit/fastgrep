@@ -99,7 +99,7 @@ int main(int argc, char *argv[]) {
 
     // Search for desired lines from given log files.
     if (vm.count("no-regex")) {
-        exec<utils::baseline::Contains>(params);
+        exec<utils::avx2::Contains>(params);
     } else {
         exec<utils::hyperscan::RegexMatcher>(params);
     }
