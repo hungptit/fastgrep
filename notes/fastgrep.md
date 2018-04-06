@@ -179,7 +179,7 @@ public:
   void operator()(const char *begin, const char *end) {
     const char *ptr = begin;
     while (
-        (ptr = static_cast<const char *>(memchr_avx2(ptr, EOL, end - ptr)))) {
+        (ptr = static_cast<const char *>(memchr(ptr, EOL, end - ptr)))) {
       ++lines;
       const size_t new_eol = file_size + ptr - begin;
       const size_t len = new_eol - current_eol - 1;
