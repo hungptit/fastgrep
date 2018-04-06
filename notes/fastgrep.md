@@ -1,5 +1,5 @@
 class: center, middle
-# How to write a fast grep like command
+# How to write a fast grep like command using modern C++
 
 ---
 
@@ -125,7 +125,7 @@ read            | read_2_20       |               0 |              10 |         
 Complete.
 ```
 
---- 
+---
 # Summary
 
 * Our simple benchmark shown that the third solution is the winner and the optimum buffer size is around 64KBytes. We will use this value a default value for our buffer size.
@@ -133,6 +133,8 @@ Complete.
 * The memory mapped solution has a very good performance.
 
 * The first solution is 20x slower than that of the memory mapped solution. We should not use it in serious applications.
+
+* The policy based design approach help to create a generic, flexible, and fast file reading algorithm.
 
 ---
 # Our final file reading algorithm
@@ -164,13 +166,13 @@ Complete.
 # Is our file reading algorithm fast?
 
 To show that our file reading algorithm is fast enough we will create a simple command which is similar to "wc -l" command and benchmark it with a reasonable big text file.
-  
+
 * Compute file size.
 
 * Count the number of lines.
 
 * Compute the maximum and minimum length of lines.
- 
+
 ---
 # A line counting filter.
 ``` c++
@@ -242,9 +244,13 @@ private:
 ---
 # What have we done so far?
 
-* We have created a generic file reading algorithm which might be one of the fastest available solution. See this [link](https://lemire.me/blog/2012/06/26/which-is-fastest-read-fread-ifstream-or-mmap/ "Lemire's blog") for more information.
+* We have created a generic file reading algorithm which might be one of the fastest available solution. See this [link](https://lemire.me/blog/2012/06/26/which-is-fastest-read-fread-ifstream-or-mmap/ "Lemire's blog") for more information. Note that we reuse our algorithm easily for different purposes. 
 
-* Our benchmark results have shown that *linestats* command is about 50% faster than *wc -l* .
+* Our benchmark results have shown that **linestats** command is about 50% faster than **wc -l**. The performance gain comes from below facts
+
+	* Tuning: We choose the best value for our buffer from the file reading benchmark.
+
+	* Inlining: The ability to inline functions at compile in C++ does contribute to the performance gain since our approach and the algorithm used in wc are mostly the same.
 
 ---
 class: center, middle
@@ -372,7 +378,7 @@ class: center, middle
 ---
 # Why our fastgrep command is very slow?
 
-Benchmark results have shown that our fastgrep command is about 7x slower than GNU grep. Below is the profiling results obtained using perf command.
+Benchmark results have shown that our fastgrep command is about 7x slower than GNU grep. Our profiling results using perf command show that fastgrep has spent a large portion of time on std::string::find command. It is obvious that we need a better string find algorithm.
 
 ``` text
 # Overhead         Command        Shared Object
@@ -393,7 +399,7 @@ Benchmark results have shown that our fastgrep command is about 7x slower than G
      0.13%  message_filter  [kernel.kallsyms]    [k] put_page
 ```
 ---
-# How can we fix it?
+# How can we improve the performance of std::string::find?
 
 ![alt text](pictures/pic1.png)
 
@@ -718,20 +724,26 @@ class: center, middle
 ---
 # Summary
 
-* The standard C++ functions for string handling are inefficient i.e std::find, std::ifstream. 
+* fastgrep's raw performance is as good as the best grep like commands i.e GNU grep and [ripgrep][ripgrep].
+
+* The standard C++ functions for string handling are inefficient i.e std::find, std::ifstream.
 
 * Our benchmark results show that our fastgrep command is at least as fast as grep and best grep like command such as ag and ripgrep.
 
-* Creating efficient solutions using C++ is not a trivial task. 
+* Creating efficient solutions using C++ is not a trivial task.
 
 	* A bad C++ code might be 10x slower than using other a similar code using other compiled languages such as C, Rust, or Go.
 
 	* A good C++ code will be the fastest solution with very high reusability.
 
 ---
+
+[ripgrep]: https://github.com/BurntSushi/ripgrep "ripgrep"
 # Todo list
 
 * Improve the usability of fastgrep command.
+
+* Need a detail benchmark.
 
 * Update the build system so users can build it with minimum amount of work.
 
@@ -742,10 +754,11 @@ class: center, middle
 ---
 # Acknowledgement
 
-* SSE2/AVX2 code is the modified version of [sse4-strstr](https://github.com/WojciechMula/sse4-strstr "sse4-strstr") 
+* SSE2/AVX2 code is the modified version of [sse4-strstr](https://github.com/WojciechMula/sse4-strstr "sse4-strstr")
 
 * I have learned the idea of a fast file reading algorithm idea from this [blog post](https://lemire.me/blog/2012/06/26/which-is-fastest-read-fread-ifstream-or-mmap/ "Lemire's blog") and [GNU wc](https://www.gnu.org/software/coreutils/manual/html_node/wc-invocation.html "wc") command.
-* Below libraries and tools have been used in my project:
+
+* Below are libraries and tools used in my project:
   * [Catch2](https://github.com/catchorg/Catch2 "Catch2")
   * [hyperscan](https://www.hyperscan.io/ "hyperscan")
   * [utils](https://github.com/hungptit/utils "utils")
@@ -754,3 +767,5 @@ class: center, middle
   * [fmt](https://github.com/fmtlib/fmt "A modern formatting library")
   * [cereal](https://github.com/USCiLab/cereal "A C++11 library for serialization")
   * [CMake](https://cmake.org/ "CMake")
+  * [benchmark](https://github.com/google/benchmark)
+  * [Celero](https://github.com/DigitalInBlue/Celero)
