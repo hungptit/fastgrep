@@ -5,7 +5,7 @@ class: center, middle
 
 # Why?
 
-* I frequently have to dive into our weblog files, which have more than 1 billions log messages per day, to find out issues with our asynchronous distributed task execution system i.e AthenaWorker.
+* I frequently have to dive into our weblog files, which have more than 1 billions log messages per day, to find out issues with our asynchronous distributed task execution system.
 
 * I want to build a fast system that can
 
