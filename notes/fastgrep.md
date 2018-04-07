@@ -41,7 +41,7 @@ class: center, middle
 
 ---
 
-# A simple C++ solution
+# [A typical C++ solution](http://insanecoding.blogspot.com/2011/11/how-to-read-in-file-in-c.html "A typical C++ solution")
 
 ``` c++
   template <typename Container> Container read_iostream(const std::string &afile) {
