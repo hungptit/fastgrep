@@ -95,7 +95,7 @@ namespace scribe {
             const char *ptr = begin;
 
             // Parse line by line
-            while ((ptr = static_cast<const char *>(memchr_avx2(ptr, EOL, end - ptr)))) {
+            while ((ptr = static_cast<const char *>(memchr(ptr, EOL, end - ptr)))) {
                 buffer.append(start, ptr - start + 1);
 
                 // Increase line counter
