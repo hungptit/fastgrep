@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
 
     // Process input parameters
     if (args.size() < 2) {
-        throw std::runtime_error("You must profile search pattern and files!");
+        throw std::runtime_error("You must provide both search pattern and files!");
     }
 
     params.pattern = args[0];
