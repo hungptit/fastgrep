@@ -5,49 +5,106 @@ class: center, middle
 
 # Why?
 
-* I frequently need to dive into our weblog files, which have more than 1 billions log messages per day, to find out issues with our asynchronous distributed task execution system.
+I frequently need to dive into our weblog files, which have more than 1 billions log messages per day, to find out issues with our asynchronous distributed task execution system. I need a command that can 
+
+* Grep matched lines from a very large log file like grep.
+
+* Filter messages using time constraints such as begin and end time.
 
 ---
 
 # Goals
 
-* Create an usable grep command that can be as fast as grep, ripgrep, and ag.
+* Create an usable grep command that can be as fast as grep, ripgrep, and/or ag.
 
 * Have reusable and fast text processing libraries that can be used in other projects.
 
 ---
 
-# What are requirements for writing a grep like command?
+# Requirements
 
-* A file reading algorithm.
+* Can find matched lines using user's specified patterns.
 
-* Pattern matching algorithms.
+* Can display matched line numbers.
+
+* Can work with any file.
+
+---
+
+# Functionality
 
 * A user friendly command line interface.
+
+* An efficient file reading algorithm.
+
+* Fast pattern matching algorithms.
+
+---
+# Setup
+
+* All code are compiled with **-O3 -march=native** flags.
+
+* Compiler: gcc-5.5 and clang-900.0.39.2
+
+* Test environments 
+
+	* Mac OS:
+	   + CPU: Intel(R) Xeon(R) CPU E5-2699 v4 @ 2.20GHz
+	   + Memory: 773519 MBytes
+	   + Storage: Very fast network storage.
+	
+	* Linux: 
+	  + CPU: Intel(R) Core(TM) i7-4770HQ CPU @ 2.20GHz
+	  + Memory: 16 GB
+	  + Storage: SSD
+
+---
+
+# How to process command line interface in C++?
+
+``` c++
+    namespace po = boost::program_options;
+    po::options_description desc("Allowed options");
+    std::string begin_time, end_time;
+    scribe::MessageFilterParams params;
+    std::vector<std::string> args;
+    desc.add_options()
+        ("help,h", "Print this help")
+        ("verbose,v", "Display verbose information.")
+        ("info", "Display information messages.")
+        ("error", "Display error messages.")
+        ("no-regex", "Do not use regex engine for pattern matching.")
+        ("begin,b", po::value<std::string>(&begin_time), "Begin time in 'mm-dd-yyyy hh:mm:ss' format.")
+        ("end,e", po::value<std::string>(&end_time), "End time in 'mm-dd-yyyy hh:mm:ss' format")
+        ("arguments,a", po::value<std::vector<std::string>>(&args), "Search pattern and files")
+        ("output,o", po::value<std::string>(&params.outfile), "Output file");
+    po::positional_options_description p;
+    p.add("arguments", -1);
+    po::variables_map vm;
+    po::store(po::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
+    po::notify(vm);
+```
 
 ---
 
 class: center, middle
 
-# How to write a fast file reading algorithms
+# How to write an efficient file reading algorithms
 
 ---
 
 # [A typical C++ solution](http://insanecoding.blogspot.com/2011/11/how-to-read-in-file-in-c.html "A typical C++ solution")
 
 ``` c++
-  template <typename Container> Container read_iostream(const std::string &afile) {
-  std::ifstream t(afile);
-  Container str;
-
-  t.seekg(0, std::ios::end);
-  str.reserve(t.tellg());
-  t.seekg(0, std::ios::beg);
-
-  str.assign((std::istreambuf_iterator<char>(t)),
-             std::istreambuf_iterator<char>());
-  return str;
-}
+    size_t iostream_linestats(const std::string &afile) {
+        std::ifstream t(afile);
+        size_t lines = 0;
+        std::for_each(std::istreambuf_iterator<char>(t), std::istreambuf_iterator<char>(),
+                      [&lines](auto const item) {
+                          if (item == EOL) ++lines;
+                      });
+        return lines;
+    }
 ```
 
 ---
@@ -55,11 +112,15 @@ class: center, middle
 # A memory mapped solution
 
 ``` c++
-    template <typename Container> Container read_memmap(const std::string &afile) {
+    size_t memmap_linestats(const std::string &afile) {
         boost::iostreams::mapped_file mmap(afile, boost::iostreams::mapped_file::readonly);
         auto begin = mmap.const_data();
         auto end = begin + mmap.size();
-        return Container(begin, end);
+        size_t lines;
+        std::for_each(begin, end, [&lines](auto const item) {
+            if (item == EOL) ++lines;
+        });
+        return lines;
     }
 ```
 ---
@@ -67,31 +128,34 @@ class: center, middle
 # A solution which uses low-level I/O APIs
 
 ``` c++
-    template <typename Container>
-    void read(const char *afile, Container &buffer, char *buf, const size_t buffer_size) {
-        int fd = ::open(afile, O_RDONLY);
-        if (fd < 0) {
-            fmt::MemoryWriter writer;
-            writer << "Cannot open file \"" << afile << "\"";
+    struct LineStats {
+        explicit LineStats() : lines(0) {}
+        void operator()(const char *buffer, size_t len) {
+            for (size_t idx = 0; idx < len; ++idx) {
+                if (buffer[idx] == EOL) {
+                    ++lines;
+                }
+            }
+        }
+        size_t lines;
+    };
+
+    // Core algorithm for reading a file
+    while (true) {
+        auto nbytes = ::read(fd, read_buffer, BUFFER_SIZE);
+        if (nbytes < 0) {
+            std::stringstream writer;
+            writer << "Cannot read file \"" << datafile << "\"";
             throw(std::runtime_error(writer.str()));
-        }
-        struct stat file_stat;
-        if (fstat(fd, &file_stat) < 0) return;
-        buffer.reserve(file_stat.st_size);
-        while (true) {
-            auto nbytes = ::read(fd, buf, buffer_size);
-            if (nbytes < 0) {
-                fmt::MemoryWriter writer;
-                writer << "Cannot read file \"" << afile << "\"";
-                throw(std::runtime_error(writer.str()));
-            };
-            buffer.append(buf, nbytes);
-            if (nbytes != static_cast<decltype(nbytes)>(buffer_size)) {
-                break;
-            };
-        }
-        ::close(fd);
+        };
+
+        // Apply a given policy to read_buffer.
+        policy(read_buffer, nbytes);
+
+        // Stop if we reach the end of file.
+        if (nbytes != static_cast<decltype(nbytes)>(BUFFER_SIZE)) { break; };
     }
+
 ```
 ---
 # Benchmark results
@@ -101,20 +165,20 @@ Celero
 Timer resolution: 0.001000 us
 -----------------------------------------------------------------------------------------------------------------------------------------------
      Group      |   Experiment    |   Prob. Space   |     Samples     |   Iterations    |    Baseline     |  us/Iteration   | Iterations/sec  |
------------------------------------------------------------------------------------------------------------------------------------------------
-read            | iostream        |               0 |              10 |               1 |         1.00000 |      9185.00000 |          108.87 |
-read            | boost_memmap    |               0 |              10 |               1 |         0.04725 |       434.00000 |         2304.15 |
-read            | read_2_10       |               0 |              10 |               1 |         0.10659 |       979.00000 |         1021.45 |
-read            | read_2_12       |               0 |              10 |               1 |         0.04377 |       402.00000 |         2487.56 |
-read            | read_2_13       |               0 |              10 |               1 |         0.04268 |       392.00000 |         2551.02 |
-read            | read_2_14       |               0 |              10 |               1 |         0.03201 |       294.00000 |         3401.36 |
-read            | read_2_15       |               0 |              10 |               1 |         0.03125 |       287.00000 |         3484.32 |
-read            | read_2_16       |               0 |              10 |               1 |         0.03081 |       283.00000 |         3533.57 |
-read            | read_2_17       |               0 |              10 |               1 |         0.02961 |       272.00000 |         3676.47 |
-read            | read_2_18       |               0 |              10 |               1 |         0.02994 |       275.00000 |         3636.36 |
-read            | read_2_19       |               0 |              10 |               1 |         0.03081 |       283.00000 |         3533.57 |
-read            | read_2_20       |               0 |              10 |               1 |         0.03125 |       287.00000 |         3484.32 |
-Complete.
+	 -----------------------------------------------------------------------------------------------------------------------------------------------
+	 linestats       | iostream_linest |               0 |               5 |               1 |         1.00000 |     37984.00000 |           26.33 |
+	 linestats       | memmap_linestat |               0 |               5 |               1 |         0.26572 |     10093.00000 |           99.08 |
+	 linestats       | linestats_2_12  |               0 |               5 |               1 |         0.21967 |      8344.00000 |          119.85 |
+	 linestats       | linestats_2_13  |               0 |               5 |               1 |         0.14482 |      5501.00000 |          181.79 |
+	 linestats       | linestats_2_14  |               0 |               5 |               1 |         0.11734 |      4457.00000 |          224.37 |
+	 linestats       | linestats_2_15  |               0 |               5 |               1 |         0.11768 |      4470.00000 |          223.71 |
+	 linestats       | linestats_2_16  |               0 |               5 |               1 |         0.10154 |      3857.00000 |          259.27 |
+	 linestats       | linestats_2_17  |               0 |               5 |               1 |         0.10468 |      3976.00000 |          251.51 |
+	 linestats       | linestats_2_18  |               0 |               5 |               1 |         0.09983 |      3792.00000 |          263.71 |
+	 linestats       | linestats_2_19  |               0 |               5 |               1 |         0.09307 |      3535.00000 |          282.89 |
+	 linestats       | linestats_2_20  |               0 |               5 |               1 |         0.09449 |      3589.00000 |          278.63 |
+	 Complete.
+	 
 ```
 
 ---
@@ -124,9 +188,9 @@ Complete.
 
 * The memory mapped solution has a very good performance.
 
-* The first solution is 20x slower than that of the memory mapped solution. We should not use it in serious applications.
+* The first solution is 10x slower than that of the memory mapped solution.
 
-* The policy based design approach help to create a generic, flexible, and fast file reading algorithm.
+* The policy based design approach helps to create generic, flexible, and fast file reading algorithms.
 
 ---
 # Our final file reading algorithm
