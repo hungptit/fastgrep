@@ -13,7 +13,7 @@ namespace scribe {
         void operator()(const char *begin, const char *end) {
             // Count the number of lines
             const char *ptr = begin;
-            while ((ptr = static_cast<const char *>(memchr_avx2(ptr, EOL, end - ptr)))) {
+            while ((ptr = static_cast<const char *>(memchr(ptr, EOL, end - ptr)))) {
                 // Update the line counter
                 ++lines;
 

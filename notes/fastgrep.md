@@ -33,7 +33,7 @@ class: center, middle
 
 ---
 
-# A simple C++ solution
+# [A typical C++ solution](http://insanecoding.blogspot.com/2011/11/how-to-read-in-file-in-c.html "A typical C++ solution")
 
 ``` c++
   template <typename Container> Container read_iostream(const std::string &afile) {
@@ -173,7 +173,7 @@ public:
   void operator()(const char *begin, const char *end) {
     const char *ptr = begin;
     while (
-        (ptr = static_cast<const char *>(memchr_avx2(ptr, EOL, end - ptr)))) {
+        (ptr = static_cast<const char *>(memchr(ptr, EOL, end - ptr)))) {
       ++lines;
       const size_t new_eol = file_size + ptr - begin;
       const size_t len = new_eol - current_eol - 1;
