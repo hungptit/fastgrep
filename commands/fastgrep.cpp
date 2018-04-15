@@ -17,7 +17,7 @@ namespace {
             return default_value;
         } else {
             if (timestr.size() == TIMESTAMP_LENGTH) {
-                return utils::parse_timestamp<utils::Timestamp>(timestr.data());
+                return utils::parse_scribe_timestamp<utils::Timestamp>(timestr.data());
             } else {
                 throw std::runtime_error(std::string("Invalid time string: ") + timestr);
             }

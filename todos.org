@@ -1,4 +1,4 @@
-* Possible fields:
+* Possible fields for a log message:
   + LEVEL: info, warn, error
   + MESSAGE:
   + PREFIX:

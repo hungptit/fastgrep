@@ -66,7 +66,7 @@ namespace scribe {
         bool operator()(const std::string &line) {
             if (line.size() < 20) return false; // Skip invalid line
             // Check the time constraints fist since it is cheaper than pattern constraint.
-            auto const t = utils::parse_timestamp<time_type>(line.data() + 1);
+            auto const t = utils::parse_scribe_timestamp<time_type>(line.data() + 1);
             if (!between(t)) return false;
             return contains(line);
         }
