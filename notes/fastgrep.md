@@ -5,15 +5,7 @@ class: center, middle
 
 # Why?
 
-* I frequently have to dive into our weblog files, which have more than 1 billions log messages per day, to find out issues with our asynchronous distributed task execution system.
-
-* I want to build a fast system that can
-
-	* Automatically identify issues within a given time period.
-
-	* Track/check/validate the life cycle of messages and tasks.
-
-	* Allow users to find their desired log message quickly.
+* I frequently need to dive into our weblog files, which have more than 1 billions log messages per day, to find out issues with our asynchronous distributed task execution system.
 
 ---
 
@@ -21,7 +13,7 @@ class: center, middle
 
 * Create an usable grep command that can be as fast as grep, ripgrep, and ag.
 
-* Have reusable libraries that can be used in other projects.
+* Have reusable and fast text processing libraries that can be used in other projects.
 
 ---
 
@@ -72,7 +64,7 @@ class: center, middle
 ```
 ---
 
-# A solution that use low level I/O APIs
+# A solution which uses low-level I/O APIs
 
 ``` c++
     template <typename Container>

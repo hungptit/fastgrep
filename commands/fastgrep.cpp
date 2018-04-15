@@ -17,7 +17,7 @@ namespace {
             return default_value;
         } else {
             if (timestr.size() == TIMESTAMP_LENGTH) {
-                return utils::parse_timestamp<utils::Timestamp>(timestr.data());
+                return utils::parse_scribe_timestamp<utils::Timestamp>(timestr.data());
             } else {
                 throw std::runtime_error(std::string("Invalid time string: ") + timestr);
             }
@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
 
     // Process input parameters
     if (args.size() < 2) {
-        throw std::runtime_error("You must profile search pattern and files!");
+        throw std::runtime_error("You must provide both search pattern and files!");
     }
 
     params.pattern = args[0];
