@@ -268,9 +268,9 @@ private:
 ---
 # What have we done so far?
 
-* We have created a generic file reading algorithm which might be one of the fastest available solution. See this [link](https://lemire.me/blog/2012/06/26/which-is-fastest-read-fread-ifstream-or-mmap/ "Lemire's blog") for more information. Note that we reuse our algorithm easily for different purposes. 
+* We have created a generic and reuseable file reading algorithm which might be one of the fastest available solution. See this [link](https://lemire.me/blog/2012/06/26/which-is-fastest-read-fread-ifstream-or-mmap/ "Lemire's blog") for more information.
 
-* Our benchmark results have shown that **linestats** command is about 50% faster than **wc -l**. The performance gain comes from below facts
+* Our benchmark results have shown that **linestats** command is about 40% faster than **wc -l**. The performance gain comes from below facts
 
 	* Tuning: We choose the best value for our buffer from the file reading benchmark.
 
@@ -281,9 +281,9 @@ class: center, middle
 # How to write a fast string search algorithm?
 
 ---
-# First version of [fastgrep](https://github.com/hungptit/scribe_parser "A very fast grep like command")
+# First version of [fastgrep](https://github.com/hungptit/fastgrep "A simple implementation of a grep like command")
 
-We have already had a fast file reading algorithm and to be able to create our first working version of fastgrep command we need below classes
+We have already had a fast file reading algorithm and below are policy classes that are used in our first working version of fastgrep command we need below classes
 
 * MessageFilter: This class is called within the file reading algorithm. It will take a string buffer break it into lines then display lines that match a given string pattern.
 
@@ -742,34 +742,88 @@ sys          0.03
 ```
 
 ---
-class: center, middle
-# Demo
+# A fast timestamp parser
+
+``` c++
+struct _ts {
+    unsigned char tm_isdst;
+    unsigned char tm_sec;
+    unsigned char tm_min;
+    unsigned char tm_hour;
+    unsigned char tm_mday;
+    unsigned char tm_mon;
+    unsigned short tm_year;
+};
+
+union _tsdata {
+    detail::_ts ts;
+    int64_t value;
+};
+
+// A timestamp string will be in this format "MM/DD/YYYY hh::mm::ss"
+template <typename T> T parse_scribe_timestamp(const char *ptr) {
+    T tm;
+    tm.data.ts.tm_mon = parse_digits<2>(ptr, 0);
+    tm.data.ts.tm_mday = parse_digits<2>(ptr + 3, 0);
+    tm.data.ts.tm_year = parse_digits<4>(ptr + 6, 0);
+    tm.data.ts.tm_hour = parse_digits<2>(ptr + 11, 0);
+    tm.data.ts.tm_min = parse_digits<2>(ptr + 14, 0);
+    tm.data.ts.tm_sec = parse_digits<2>(ptr + 17, 0);
+    tm.data.ts.tm_isdst = 0; // We do not care about day light saving when parsing log data.
+    return tm;
+}
+```
+
+---
+# Benchmark results
+
+``` text
+2018-04-15 16:15:32
+Running ./timeutils
+Run on (8 X 2200 MHz CPU s)
+CPU Caches:
+  L1 Data 32K (x4)
+  L1 Instruction 32K (x4)
+  L2 Unified 262K (x4)
+  L3 Unified 6291K (x1)
+---------------------------------------------------
+Benchmark            Time           CPU Iterations
+---------------------------------------------------
+strftime           114 ns        114 ns    6138251
+fast_parser          4 ns          4 ns  121000501
+```
 
 ---
 # Summary
 
-* fastgrep's raw performance is as good as the best grep like commands i.e GNU grep and [ripgrep][ripgrep].
+* Our customized timestamp is a big win, it offers 50x speedup on Linux compared with **strptime** function. We can significantly speedup log search tasks if we know our begin and end time of log messages.
 
-* The standard C++ functions for string handling are inefficient i.e std::find, std::ifstream.
+* hyperscan is very easy to use and it makes fastgrep regex search as fast as that of grep and ripgrep.
 
-* Our benchmark results show that our fastgrep command is at least as fast as grep and best grep like command such as ag and ripgrep.
 
-* Creating efficient solutions using C++ is not a trivial task.
+---
+class: center, middle
+# Demo
 
-	* A bad C++ code might be 10x slower than using other a similar code using other compiled languages such as C, Rust, or Go.
+---
+# Conclusions
 
-	* A good C++ code will be the fastest solution with very high reusability.
+* fastgrep's raw performance is as good as the best grep like commands i.e GNU grep and [ripgrep][ripgrep]. However, it can filter our scribe log messages using timestamp.
+
+* Generic programming paradigm is a big win. It helps to create reusable, flexible, and performant algorithms.
+
+* The standard C++ functions for string handling are inefficient i.e std::find and std::ifstream.
+
+* Creating efficient solutions using modern C++ is not a trivial task. From our examples, we can easily see that a regular C++ code might be significantly slower than that of a similar code writtent in other compiled languages such as C, Rust, or may be Go.
 
 ---
 
-[ripgrep]: https://github.com/BurntSushi/ripgrep "ripgrep"
+
 # Todo list
 
 * Improve the usability of fastgrep command.
 
 * Need a detail benchmark.
-
-* Update the build system so users can build it with minimum amount of work.
 
 ---
 class: center, middle
@@ -780,9 +834,9 @@ class: center, middle
 
 * SSE2/AVX2 code is the modified version of [sse4-strstr](https://github.com/WojciechMula/sse4-strstr "sse4-strstr")
 
-* I have learned the idea of a fast file reading algorithm idea from this [blog post](https://lemire.me/blog/2012/06/26/which-is-fastest-read-fread-ifstream-or-mmap/ "Lemire's blog") and [GNU wc](https://www.gnu.org/software/coreutils/manual/html_node/wc-invocation.html "wc") command.
+* References for my fast file reading algorithm are [lemire's blog post](https://lemire.me/blog/2012/06/26/which-is-fastest-read-fread-ifstream-or-mmap/ "Lemire's blog") and [GNU wc command](https://www.gnu.org/software/coreutils/manual/html_node/wc-invocation.html "wc").
 
-* Below are libraries and tools used in my project:
+* Used Below are libraries and tools:
   * [Catch2](https://github.com/catchorg/Catch2 "Catch2")
   * [hyperscan](https://www.hyperscan.io/ "hyperscan")
   * [utils](https://github.com/hungptit/utils "utils")
@@ -793,3 +847,8 @@ class: center, middle
   * [CMake](https://cmake.org/ "CMake")
   * [benchmark](https://github.com/google/benchmark)
   * [Celero](https://github.com/DigitalInBlue/Celero)
+  * [gcc](https://gcc.gnu.org/)
+  * [clang](https://clang.llvm.org/)
+  * [perf](https://en.wikipedia.org/wiki/Perf_(Linux))
+
+[ripgrep]: https://github.com/BurntSushi/ripgrep "ripgrep"
