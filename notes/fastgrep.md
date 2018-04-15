@@ -125,7 +125,7 @@ class: center, middle
 ```
 ---
 
-# A solution which uses low-level I/O APIs
+# A low-level I/O solution
 
 ``` c++
     struct LineStats {
@@ -184,50 +184,18 @@ Timer resolution: 0.001000 us
 ---
 # Summary
 
-* Our simple benchmark shown that the third solution is the winner and the optimum buffer size is around 64KBytes. We will use this value a default value for our buffer size.
+* Our simple benchmark shown that the third approach is the winner in my Macbook Pro and the optimum buffer size is around 64KBytes. We will use this value a default value for our buffer size in all fastgrep implementations.
 
 * The memory mapped solution has a very good performance.
 
 * The first solution is 10x slower than that of the memory mapped solution.
 
-* The policy based design approach helps to create generic, flexible, and fast file reading algorithms.
-
----
-# Our final file reading algorithm
-
-``` c++
-    template <size_t BUFFER_SIZE, typename Parser> class FileReader {
-      public:
-        void operator()(const char *datafile, Parser &parser, const long offset = 0) {
-            char read_buffer[BUFFER_SIZE + 1];
-            int fd = ::open(datafile, O_RDONLY);
-			// Let the kernel know that we are going to read sequentially to the end of a file.
-			posix_fadvise(fd, 0, 0, POSIX_FADV_SEQUENTIAL);
-            while (true) {
-                auto nbytes = ::read(fd, read_buffer, BUFFER_SIZE);
-                if (nbytes < 0) {
-                    std::stringstream writer;
-                    writer << "Cannot read file \"" << datafile << "\"";
-                    throw(std::runtime_error(writer.str()));
-                };
-                parser(read_buffer, read_buffer + nbytes); // Read buffer is processed using a templatized policy.
-                if (nbytes != static_cast<decltype(nbytes)>(BUFFER_SIZE)) { break; };
-            }
-            ::close(fd);
-        }
-    };
-```
+* The policy based design approach helps to create generic, flexible, and very fast file reading algorithms.
 
 ---
 # Is our file reading algorithm fast?
 
-To show that our file reading algorithm is fast enough we will create a simple command which is similar to "wc -l" command and benchmark it with a reasonable big text file.
-
-* Compute file size.
-
-* Count the number of lines.
-
-* Compute the maximum and minimum length of lines.
+To show that our file reading algorithm is fast enough we will create a simple command which is similar to "wc -l" command and benchmark it with a reasonable big scribe log file.
 
 ---
 # A line counting filter.
