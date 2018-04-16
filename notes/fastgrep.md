@@ -855,7 +855,7 @@ class: center, middle
   * [hyperscan](https://www.hyperscan.io/ "hyperscan")
   * [utils](https://github.com/hungptit/utils "utils")
   * [ioutils](https://github.com/hungptit/ioutils "A blazing fast file I/O library")
-  * [Boost](https://www.boost.org/ "Boost libraries")
+  * [boost](https://www.boost.org/ "Boost libraries")
   * [fmt](https://github.com/fmtlib/fmt "A modern formatting library")
   * [cereal](https://github.com/USCiLab/cereal "A C++11 library for serialization")
   * [CMake](https://cmake.org/ "CMake")
