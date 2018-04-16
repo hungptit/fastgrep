@@ -5,7 +5,7 @@ class: center, middle
 
 # Why?
 
-I frequently need to dive into our weblog files, which have more than 1 billions log messages per day, to find out issues with our asynchronous distributed task execution system. I need a command that can 
+I frequently need to dive into our weblog files, which have more than 1 billions log messages per day, to find out issues with our asynchronous distributed task execution system. I need a command that can
 
 * Search for log message or lines that matched my constraints from a very large log file.
 
@@ -46,14 +46,14 @@ I frequently need to dive into our weblog files, which have more than 1 billions
 
 * Compiler: gcc-5.5 and clang-900.0.39.2
 
-* Test environments 
+* Test environments
 
-	* Mac OS:
+	* Linux:
 	   + CPU: Intel(R) Xeon(R) CPU E5-2699 v4 @ 2.20GHz
 	   + Memory: 773519 MBytes
 	   + Storage: Very fast network storage.
-	
-	* Linux: 
+
+	* Mac OS:
 	  + CPU: Intel(R) Core(TM) i7-4770HQ CPU @ 2.20GHz
 	  + Memory: 16 GB
 	  + Storage: SSD
@@ -178,7 +178,7 @@ Timer resolution: 0.001000 us
 	 linestats       | linestats_2_19  |               0 |               5 |               1 |         0.09307 |      3535.00000 |          282.89 |
 	 linestats       | linestats_2_20  |               0 |               5 |               1 |         0.09449 |      3589.00000 |          278.63 |
 	 Complete.
-	 
+
 ```
 
 ---
@@ -663,8 +663,6 @@ sys          0.03
 
 * Optimized string matching algorithms do significantly improve the performance of fastgrep.
 
-* C++ allows us to create reusable, flexible, and high performance algorithms.
-
 ---
 # Are we done?
 
@@ -742,8 +740,24 @@ sys          0.03
 ```
 
 ---
-# A fast timestamp parser
+class: center, middle
+# How to write an efficient timestamp parser
 
+---
+# An typical solution using **strptime**
+
+``` c++
+// Basic implementation using strptime.
+void strftime(benchmark::State &state) {
+    struct tm tm;
+    for (auto _ : state) {
+        strptime(timestamp, "%m-%d-%Y %H:%M:%S", &tm);
+    }
+}
+```
+
+---
+# Our customized timestamp parser
 ``` c++
 struct _ts {
     unsigned char tm_isdst;
@@ -841,7 +855,7 @@ class: center, middle
   * [hyperscan](https://www.hyperscan.io/ "hyperscan")
   * [utils](https://github.com/hungptit/utils "utils")
   * [ioutils](https://github.com/hungptit/ioutils "A blazing fast file I/O library")
-  * [Boost](https://www.boost.org/ "Boost libraries")
+  * [boost](https://www.boost.org/ "Boost libraries")
   * [fmt](https://github.com/fmtlib/fmt "A modern formatting library")
   * [cereal](https://github.com/USCiLab/cereal "A C++11 library for serialization")
   * [CMake](https://cmake.org/ "CMake")
