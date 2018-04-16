@@ -7,7 +7,7 @@ class: center, middle
 
 I frequently need to dive into our weblog files, which have more than 1 billions log messages per day, to find out issues with our asynchronous distributed task execution system. I need a command that can 
 
-* Grep matched lines from a very large log file like grep.
+* Search for log message or lines that matched my constraints from a very large log file.
 
 * Filter messages using time constraints such as begin and end time.
 
