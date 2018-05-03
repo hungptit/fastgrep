@@ -9,11 +9,11 @@ class: center, middle
 
 * I want to build a fast system that can
 
-	* Automatically identify issues within a given time period.
+    * Automatically identify issues within a given time period.
 
-	* Track/check/validate the life cycle of messages and tasks.
+    * Track/check/validate the life cycle of messages and tasks.
 
-	* Allow users to find their desired log message quickly.
+    * Allow users to find their desired log message quickly.
 
 ---
 
@@ -128,11 +128,11 @@ Complete.
 ---
 # Summary
 
-* Our simple benchmark shown that the third solution is the winner and the optimum buffer size is around 64KBytes. We will use this value a default value for our buffer size.
+* Our simple benchmark shown that the third solution is the winner and the optimum buffer size is around 64KBytes. We will use this value as a default value for our buffer size in all of our benchmarks.
 
 * The memory mapped solution has a very good performance.
 
-* The first solution is 20x slower than that of the memory mapped solution. We should not use it in serious applications.
+* The first solution is 20x slower than that of the memory mapped solution. **We should not use it in serious applications.**
 
 * The policy based design approach help to create a generic, flexible, and fast file reading algorithm.
 
@@ -145,8 +145,6 @@ Complete.
         void operator()(const char *datafile, Parser &parser, const long offset = 0) {
             char read_buffer[BUFFER_SIZE + 1];
             int fd = ::open(datafile, O_RDONLY);
-			// Let the kernel know that we are going to read sequentially to the end of a file.
-			posix_fadvise(fd, 0, 0, POSIX_FADV_SEQUENTIAL);
             while (true) {
                 auto nbytes = ::read(fd, read_buffer, BUFFER_SIZE);
                 if (nbytes < 0) {
@@ -244,13 +242,13 @@ private:
 ---
 # What have we done so far?
 
-* We have created a generic file reading algorithm which might be one of the fastest available solution. See this [link](https://lemire.me/blog/2012/06/26/which-is-fastest-read-fread-ifstream-or-mmap/ "Lemire's blog") for more information. Note that we reuse our algorithm easily for different purposes. 
+* We have created a generic file reading algorithm which might be one of the fastest available solution. See this [link](https://lemire.me/blog/2012/06/26/which-is-fastest-read-fread-ifstream-or-mmap/ "Lemire's blog") for more information. Note that we reuse our algorithm easily for different purposes.
 
 * Our benchmark results have shown that **linestats** command is about 50% faster than **wc -l**. The performance gain comes from below facts
 
-	* Tuning: We choose the best value for our buffer from the file reading benchmark.
+    * Tuning: We choose the best value for our buffer from the file reading benchmark.
 
-	* Inlining: The ability to inline functions at compile in C++ does contribute to the performance gain since our approach and the algorithm used in wc are mostly the same.
+    * Inlining: The ability to inline functions at compile in C++ does contribute to the performance gain since our approach and the algorithm used in wc are mostly the same.
 
 ---
 class: center, middle
@@ -259,9 +257,9 @@ class: center, middle
 ---
 # First version of [fastgrep](https://github.com/hungptit/scribe_parser "A very fast grep like command")
 
-We have already had a fast file reading algorithm and to be able to create our first working version of fastgrep command we need below classes
+We have already had a fast file reading algorithm and next step we will create our first working version of fastgrep command using below classes
 
-* MessageFilter: This class is called within the file reading algorithm. It will take a string buffer break it into lines then display lines that match a given string pattern.
+* MessageFilter: This class is called within the file reading algorithm. It will take a string buffer break it into lines then display lines that match a given string pattern. Note that parsing line by line is not a fastest way to grep the content of a file, however, we will stay with this approach for the rest of this talk.
 
 * utils::Contains: This class check that a pattern is matched with a given text line.
 
@@ -732,9 +730,9 @@ class: center, middle
 
 * Creating efficient solutions using C++ is not a trivial task.
 
-	* A bad C++ code might be 10x slower than using other a similar code using other compiled languages such as C, Rust, or Go.
+    * A bad C++ code might be 10x slower than a similar code written other compiled languages such as C, Rust, or Go.
 
-	* A good C++ code will be the fastest solution with very high reusability.
+    * A good C++ code will be the fastest solution with very high reusability.
 
 ---
 
@@ -756,9 +754,9 @@ class: center, middle
 
 * SSE2/AVX2 code is the modified version of [sse4-strstr](https://github.com/WojciechMula/sse4-strstr "sse4-strstr")
 
-* I have learned the idea of a fast file reading algorithm idea from this [blog post](https://lemire.me/blog/2012/06/26/which-is-fastest-read-fread-ifstream-or-mmap/ "Lemire's blog") and [GNU wc](https://www.gnu.org/software/coreutils/manual/html_node/wc-invocation.html "wc") command.
+* The idea of a fast file reading algorithm comes from this [blog post](https://lemire.me/blog/2012/06/26/which-is-fastest-read-fread-ifstream-or-mmap/ "Lemire's blog") and [GNU wc](https://www.gnu.org/software/coreutils/manual/html_node/wc-invocation.html "wc") command.
 
-* Below are libraries and tools used in my project:
+* Below are libraries and tools used by fastgrep:
   * [Catch2](https://github.com/catchorg/Catch2 "Catch2")
   * [hyperscan](https://www.hyperscan.io/ "hyperscan")
   * [utils](https://github.com/hungptit/utils "utils")
