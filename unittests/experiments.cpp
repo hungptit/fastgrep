@@ -146,5 +146,7 @@ int main(int argc, char *argv[]) {
         explorer.print();
     }
 
+	fmt::memory_buffer buffer;
+	
     return EXIT_SUCCESS;
 }

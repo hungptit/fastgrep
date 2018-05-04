@@ -51,6 +51,22 @@
    + Update message lifecycle table. A vector + a hash table.
    + Print out summary information.
    + Print out outlier.
+* What we can do to speedup fastgrep?
+** Parsing algorithm: Can we parse the read buffer instead of copying to the line buffer?
+   + Handle cases that a line can be on many block.
+   + 
+** Scan log file to cache message information such as 
+   + begin and end of a message.
+   + Type of messages?
+   + Timestamp
+** How do we cache messages
+*** publish request.
+	+ Can be varied from 131 to several MBytes.
+*** Control messages
+	+ We only store the message id (20 bytes) and message type (1 bytes)
+*** Error messages
+	+ User error
+	+ RAW_ERROR: connect and publish errors etc.
 * Use cases
 ** Support skip patterns
 ** Filter message by time stamp.
