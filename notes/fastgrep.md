@@ -1,5 +1,5 @@
 class: center, middle
-# How to write a fast grep like command
+# How to write a very fast grep like command
 
 ---
 
