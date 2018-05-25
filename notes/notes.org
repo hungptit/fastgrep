@@ -1,0 +1,11 @@
+* Title:
+  How to write a fast grep like command using modern C++
+* Summary:
+  This talk will start with writing a simple line counting program and
+  make our program more complicated by each step using policy based
+  design approach. At the end of this talk we will be able to create a
+  very fast grep like command i.e it is faster than grep or
+  ripgrep. As much as of this talk will focus on how to write reusable
+  and high performance algorithms and some specific algorithms
+  designing that makes core algorithms have greater performance than
+  naive approaches.

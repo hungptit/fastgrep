@@ -5,12 +5,7 @@ class: center, middle
 
 # Why?
 
-I frequently need to dive into our weblog files, which have more than 1 billions log messages per day, to find out issues with our asynchronous distributed task execution system. I need a command that can
-
-* Grep matched lines from a very large log file like grep.
-
-* Filter messages using time constraints such as begin and end time.
-
+Our distributed system logs more than one billions log messages a day and we occasionally need to dive into our log files to troubleshoot production issues.
 
 ---
 
@@ -49,15 +44,15 @@ I frequently need to dive into our weblog files, which have more than 1 billions
 
 * Test environments
 
-	* Linux:
-	   + CPU: Intel(R) Xeon(R) CPU E5-2699 v4 @ 2.20GHz
-	   + Memory: 773519 MBytes
-	   + Storage: Very fast network storage.
+    * Linux:
+      + CPU: Intel(R) Xeon(R) CPU E5-2699 v4 @ 2.20GHz
+      + Memory: 773519 MBytes
+      + Storage: Very fast network storage.
 
-	* Mac OS:
-	  + CPU: Intel(R) Core(TM) i7-4770HQ CPU @ 2.20GHz
-	  + Memory: 16 GB
-	  + Storage: SSD
+    * Mac OS:
+      + CPU: Intel(R) Core(TM) i7-4770HQ CPU @ 2.20GHz
+      + Memory: 16 GB
+      + Storage: SSD
 
 ---
 
@@ -166,19 +161,19 @@ Celero
 Timer resolution: 0.001000 us
 -----------------------------------------------------------------------------------------------------------------------------------------------
      Group      |   Experiment    |   Prob. Space   |     Samples     |   Iterations    |    Baseline     |  us/Iteration   | Iterations/sec  |
-	 -----------------------------------------------------------------------------------------------------------------------------------------------
-	 linestats       | iostream_linest |               0 |               5 |               1 |         1.00000 |     37984.00000 |           26.33 |
-	 linestats       | memmap_linestat |               0 |               5 |               1 |         0.26572 |     10093.00000 |           99.08 |
-	 linestats       | linestats_2_12  |               0 |               5 |               1 |         0.21967 |      8344.00000 |          119.85 |
-	 linestats       | linestats_2_13  |               0 |               5 |               1 |         0.14482 |      5501.00000 |          181.79 |
-	 linestats       | linestats_2_14  |               0 |               5 |               1 |         0.11734 |      4457.00000 |          224.37 |
-	 linestats       | linestats_2_15  |               0 |               5 |               1 |         0.11768 |      4470.00000 |          223.71 |
-	 linestats       | linestats_2_16  |               0 |               5 |               1 |         0.10154 |      3857.00000 |          259.27 |
-	 linestats       | linestats_2_17  |               0 |               5 |               1 |         0.10468 |      3976.00000 |          251.51 |
-	 linestats       | linestats_2_18  |               0 |               5 |               1 |         0.09983 |      3792.00000 |          263.71 |
-	 linestats       | linestats_2_19  |               0 |               5 |               1 |         0.09307 |      3535.00000 |          282.89 |
-	 linestats       | linestats_2_20  |               0 |               5 |               1 |         0.09449 |      3589.00000 |          278.63 |
-	 Complete.
+-----------------------------------------------------------------------------------------------------------------------------------------------
+linestats       | iostream_linest |               0 |               5 |               1 |         1.00000 |     37984.00000 |           26.33 |
+linestats       | memmap_linestat |               0 |               5 |               1 |         0.26572 |     10093.00000 |           99.08 |
+linestats       | linestats_2_12  |               0 |               5 |               1 |         0.21967 |      8344.00000 |          119.85 |
+linestats       | linestats_2_13  |               0 |               5 |               1 |         0.14482 |      5501.00000 |          181.79 |
+linestats       | linestats_2_14  |               0 |               5 |               1 |         0.11734 |      4457.00000 |          224.37 |
+linestats       | linestats_2_15  |               0 |               5 |               1 |         0.11768 |      4470.00000 |          223.71 |
+linestats       | linestats_2_16  |               0 |               5 |               1 |         0.10154 |      3857.00000 |          259.27 |
+linestats       | linestats_2_17  |               0 |               5 |               1 |         0.10468 |      3976.00000 |          251.51 |
+linestats       | linestats_2_18  |               0 |               5 |               1 |         0.09983 |      3792.00000 |          263.71 |
+linestats       | linestats_2_19  |               0 |               5 |               1 |         0.09307 |      3535.00000 |          282.89 |
+linestats       | linestats_2_20  |               0 |               5 |               1 |         0.09449 |      3589.00000 |          278.63 |
+Complete.
 
 ```
 
