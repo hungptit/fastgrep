@@ -1,4 +1,3 @@
-#include "algorithms.hpp"
 #include "boost/program_options.hpp"
 #include "fmt/format.h"
 #include "grep.hpp"
@@ -9,7 +8,7 @@
 
 int main(int argc, char *argv[]) {
     if (argc < 3) return EXIT_FAILURE;
-    using Reader = ioutils::FileReader<fastgrep::GrepPolicy, 1 << 16>;
+    using Reader = ioutils::FileReader<fastgrep::GrepPolicyNew, 1 << 16>;
     Reader grep(argv[1]);
     for (auto idx = 2; idx < argc; ++idx) { grep(argv[idx]); }
     return EXIT_SUCCESS;

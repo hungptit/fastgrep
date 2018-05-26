@@ -95,12 +95,14 @@ namespace fastgrep {
 
       protected:
         void process_line(const char *begin, const size_t len) {
+            return;
             if (matcher.is_matched(begin, len)) {
-                fmt::print("{}\n", std::string(begin, begin + len));
+                fmt::print("{}", std::string(begin, begin + len));
             }
         }
 
         void process_linebuf() {
+            return;
             if (matcher.is_matched(linebuf.data(), linebuf.size())) {
                 fmt::print("{}\n", linebuf);
             }
