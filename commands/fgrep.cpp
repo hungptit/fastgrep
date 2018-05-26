@@ -9,7 +9,7 @@
 
 int main(int argc, char *argv[]) {
     if (argc < 3) return EXIT_FAILURE;
-    using Reader = ioutils::FileReader<fastgrep::GrepPolicy, 1 << 14>;
+    using Reader = ioutils::FileReader<fastgrep::GrepPolicy, 1 << 16>;
     Reader grep(argv[1]);
     for (auto idx = 2; idx < argc; ++idx) { grep(argv[idx]); }
     return EXIT_SUCCESS;

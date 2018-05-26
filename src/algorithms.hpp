@@ -34,9 +34,9 @@ namespace scribe {
                 }
             }
 
-			// Let the kernel know that we are going to read sequentially to the end of a file.
-			// posix_fadvise(fd, 0, 0, POSIX_FADV_SEQUENTIAL);
-			
+            // Let the kernel know that we are going to read sequentially to the end of a file.
+            // posix_fadvise(fd, 0, 0, POSIX_FADV_SEQUENTIAL);
+
             // Read data into a string
             while (true) {
                 auto nbytes = ::read(fd, read_buffer, BUFFER_SIZE);
