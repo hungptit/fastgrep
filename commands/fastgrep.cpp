@@ -25,7 +25,7 @@ namespace {
     }
 
     template <typename Constraints> void filter(const scribe::MessageFilterParams &params) {
-        constexpr size_t BUFFER_SIZE = 1 << 16;
+        constexpr size_t BUFFER_SIZE = 1 << 20;
         Constraints cons(params);
         using MessageFilter = typename scribe::MessageFilter<Constraints>;
         MessageFilter filter(params);

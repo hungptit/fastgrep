@@ -3,7 +3,7 @@
 #include "fmt/format.h"
 #include "unistd.h"
 #include <limits>
-#include "utils/memchr.hpp"
+// #include "utils/memchr.hpp"
 
 namespace scribe {
     // A simple parser which computes the file size, the number of lines, and

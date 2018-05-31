@@ -36,21 +36,19 @@ namespace fastgrep {
             pos += len;
         }
 
-        size_t lines = 0;
+        size_t lines = 1;
         size_t pos = 0;
         utils::hyperscan::RegexMatcher matcher;
 
       protected:
         void process_line(const char *begin, const size_t len) {
             if (matcher.is_matched(begin, len)) {
-                fmt::print("{}\n", std::string(begin, begin + len));
+                fmt::print("{0}:{1}", lines, std::string(begin, len));
             }
         }
 
         void process_linebuf() {
-            if (matcher.is_matched(linebuf.data(), linebuf.size())) {
-                fmt::print("{}\n", linebuf);
-            }
+            process_line(linebuf.data(), linebuf.size());
         }
 
         std::string linebuf;
@@ -95,16 +93,14 @@ namespace fastgrep {
 
       protected:
         void process_line(const char *begin, const size_t len) {
-            return;
             if (matcher.is_matched(begin, len)) {
-                fmt::print("{}", std::string(begin, begin + len));
+                fmt::print("{0}:{1}", std::string(begin, begin + len), lines);
             }
         }
 
         void process_linebuf() {
-            return;
             if (matcher.is_matched(linebuf.data(), linebuf.size())) {
-                fmt::print("{}\n", linebuf);
+                fmt::print("{0}:{1}", linebuf, lines);
             }
         }
 
