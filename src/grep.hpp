@@ -43,7 +43,7 @@ namespace fastgrep {
       protected:
         void process_line(const char *begin, const size_t len) {
             if (matcher.is_matched(begin, len)) {
-                fmt::print("{0}:{1}", lines, std::string(begin, len));
+                fmt::print("{0}:{1}", lines, fmt::string_view(begin, len));
             }
         }
 
@@ -66,7 +66,7 @@ namespace fastgrep {
             const char *ptr = begin;
             while ((ptr = static_cast<const char *>(memchr(ptr, EOL, end - ptr)))) {
                 if (linebuf.empty()) {
-                    process_line(start, ptr - start);
+                    process_line(start, ptr - start + 1);
                 } else {
                     linebuf.append(start, ptr - start + 1);
                     process_linebuf();
@@ -94,14 +94,12 @@ namespace fastgrep {
       protected:
         void process_line(const char *begin, const size_t len) {
             if (matcher.is_matched(begin, len)) {
-                fmt::print("{0}:{1}", std::string(begin, begin + len), lines);
+                fmt::print("{0}:{1}", lines, fmt::string_view(begin, len));
             }
         }
 
         void process_linebuf() {
-            if (matcher.is_matched(linebuf.data(), linebuf.size())) {
-                fmt::print("{0}:{1}", linebuf, lines);
-            }
+            process_line(linebuf.data(), linebuf.size());
         }
 
     };
