@@ -43,7 +43,7 @@ namespace fastgrep {
       protected:
         void process_line(const char *begin, const size_t len) {
             if (matcher.is_matched(begin, len)) {
-                fmt::print("{0}:{1}", lines, fmt::string_view(begin, len));
+                fmt::print("{0}:{1}", lines, std::string(begin, len));
             }
         }
 
@@ -94,7 +94,7 @@ namespace fastgrep {
       protected:
         void process_line(const char *begin, const size_t len) {
             if (matcher.is_matched(begin, len)) {
-                fmt::print("{0}:{1}", lines, fmt::string_view(begin, len));
+                fmt::print("{0}:{1}", lines, std::string(begin, len));
             }
         }
 
