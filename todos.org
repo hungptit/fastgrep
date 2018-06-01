@@ -59,3 +59,6 @@
 ** Save found message to files in different format.
 ** Check message life cycle.
 ** Clustering messages
+* Questions
+** Can mixed-in offer better performance than policy based approach? 
+** 

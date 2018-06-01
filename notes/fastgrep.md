@@ -7,9 +7,9 @@ class: center, middle
 
 I frequently need to dive into our weblog files, which have more than 1 billions log messages per day, to find out issues with our asynchronous distributed task execution system. I need a command that can
 
-* Search for log message or lines that matched my constraints from a very large log file.
+* Search for log messages or lines that matched my constraints from big log files.
 
-* Filter messages using time constraints such as begin and end time.
+* Filter log messages using time constraints such as begin and end time.
 
 ---
 
@@ -59,7 +59,25 @@ I frequently need to dive into our weblog files, which have more than 1 billions
 	  + Storage: SSD
 
 ---
+# Introduction to generic programming
 
+??? Need to get the picture of Alex book.
+
+---
+# What is **Policy-based design** 
+
+``` text
+Policy-based design, also known as policy-based class design or policy-based programming, is a computer programming paradigm based on an idiom for C++ known as policies. It has been described as a compile-time variant of the strategy pattern, and has connections with C++ template metaprogramming. It was first popularized by Andrei Alexandrescu with his 2001 book Modern C++ Design and his column Generic<Programming> in the C/C++ Users Journal.
+```
+
+---
+# A sample application based on policy-based design
+
+``` C++
+
+```
+
+---
 # How to process command line interface in C++?
 
 ``` c++
