@@ -101,7 +101,7 @@ include_directories ("${ROOT_DIR}/src")
 SET(LIB_HS "${EXTERNAL_DIR}/lib/libhs.a")
 SET(LIB_HS_RUNTIME "${EXTERNAL_DIR}/lib/libhs_runtime.a")
 
-set(COMMAND_SRC_FILES grep_bench)
+set(COMMAND_SRC_FILES grep_bench all_tests)
 foreach (src_file ${COMMAND_SRC_FILES})
   ADD_EXECUTABLE(${src_file} ${src_file}.cpp)
   TARGET_LINK_LIBRARIES(${src_file} ${LIB_CELERO}  ${LIB_HS} ${LIB_HS_RUNTIME})
