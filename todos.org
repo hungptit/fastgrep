@@ -11,6 +11,20 @@
      - Timestamp
      - Node name
      - Pool name
+** How to make thing fast?
+   + Run the first time to get the size of lines.
+   + Second run will be used to filter messages?
+** File
+   + size: Size of a file.
+   + lines: Position of EOL.
+   + data: A file content.
+** FileStats
+   + path: Full path
+   + stem: Stem
+   + extension: File extension
+   + mask: Read/Write/Execute etc
+   + symlink: Is a symlink or not
+   + is_dir: Is a folder or not
 * Tasks
 ** Loop thought all log files and find all possible field name.
    + Extract JSON string.

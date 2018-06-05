@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include <sstream>
@@ -7,8 +6,8 @@
 
 #include "hs/hs.h"
 #include "utils/matchers.hpp"
-#include "utils/matchers_avx2.hpp"
-#include "utils/memchr.hpp"
+// #include "utils/matchers_avx2.hpp"
+// #include "utils/memchr.hpp"
 #include "utils/timestamp.hpp"
 #include "utils/timeutils.hpp"
 
@@ -71,7 +70,7 @@ namespace scribe {
             return contains(line);
         }
 
-      private:
+    private:
         pattern_type contains; // Search for a given string pattern
         time_constraint_type between;
     };

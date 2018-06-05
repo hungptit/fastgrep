@@ -5,11 +5,7 @@ class: center, middle
 
 # Why?
 
-I frequently need to dive into our weblog files, which have more than 1 billions log messages per day, to find out issues with our asynchronous distributed task execution system. I need a command that can
-
-* Search for log messages or lines that matched my constraints from big log files.
-
-* Filter log messages using time constraints such as begin and end time.
+Our distributed system logs more than one billions log messages a day and we occasionally need to dive into our log files to identify production issues.
 
 ---
 
@@ -48,15 +44,15 @@ I frequently need to dive into our weblog files, which have more than 1 billions
 
 * Test environments
 
-	* Linux:
-	   + CPU: Intel(R) Xeon(R) CPU E5-2699 v4 @ 2.20GHz
-	   + Memory: 773519 MBytes
-	   + Storage: Very fast network storage.
+    * Linux:
+      + CPU: Intel(R) Xeon(R) CPU E5-2699 v4 @ 2.20GHz
+      + Memory: 773519 MBytes
+      + Storage: Very fast network storage.
 
-	* Mac OS:
-	  + CPU: Intel(R) Core(TM) i7-4770HQ CPU @ 2.20GHz
-	  + Memory: 16 GB
-	  + Storage: SSD
+    * Mac OS:
+      + CPU: Intel(R) Core(TM) i7-4770HQ CPU @ 2.20GHz
+      + Memory: 16 GB
+      + Storage: SSD
 
 ---
 # Introduction to generic programming
@@ -183,32 +179,56 @@ Celero
 Timer resolution: 0.001000 us
 -----------------------------------------------------------------------------------------------------------------------------------------------
      Group      |   Experiment    |   Prob. Space   |     Samples     |   Iterations    |    Baseline     |  us/Iteration   | Iterations/sec  |
-	 -----------------------------------------------------------------------------------------------------------------------------------------------
-	 linestats       | iostream_linest |               0 |               5 |               1 |         1.00000 |     37984.00000 |           26.33 |
-	 linestats       | memmap_linestat |               0 |               5 |               1 |         0.26572 |     10093.00000 |           99.08 |
-	 linestats       | linestats_2_12  |               0 |               5 |               1 |         0.21967 |      8344.00000 |          119.85 |
-	 linestats       | linestats_2_13  |               0 |               5 |               1 |         0.14482 |      5501.00000 |          181.79 |
-	 linestats       | linestats_2_14  |               0 |               5 |               1 |         0.11734 |      4457.00000 |          224.37 |
-	 linestats       | linestats_2_15  |               0 |               5 |               1 |         0.11768 |      4470.00000 |          223.71 |
-	 linestats       | linestats_2_16  |               0 |               5 |               1 |         0.10154 |      3857.00000 |          259.27 |
-	 linestats       | linestats_2_17  |               0 |               5 |               1 |         0.10468 |      3976.00000 |          251.51 |
-	 linestats       | linestats_2_18  |               0 |               5 |               1 |         0.09983 |      3792.00000 |          263.71 |
-	 linestats       | linestats_2_19  |               0 |               5 |               1 |         0.09307 |      3535.00000 |          282.89 |
-	 linestats       | linestats_2_20  |               0 |               5 |               1 |         0.09449 |      3589.00000 |          278.63 |
-	 Complete.
+-----------------------------------------------------------------------------------------------------------------------------------------------
+linestats       | iostream_linest |               0 |               5 |               1 |         1.00000 |     37984.00000 |           26.33 |
+linestats       | memmap_linestat |               0 |               5 |               1 |         0.26572 |     10093.00000 |           99.08 |
+linestats       | linestats_2_12  |               0 |               5 |               1 |         0.21967 |      8344.00000 |          119.85 |
+linestats       | linestats_2_13  |               0 |               5 |               1 |         0.14482 |      5501.00000 |          181.79 |
+linestats       | linestats_2_14  |               0 |               5 |               1 |         0.11734 |      4457.00000 |          224.37 |
+linestats       | linestats_2_15  |               0 |               5 |               1 |         0.11768 |      4470.00000 |          223.71 |
+linestats       | linestats_2_16  |               0 |               5 |               1 |         0.10154 |      3857.00000 |          259.27 |
+linestats       | linestats_2_17  |               0 |               5 |               1 |         0.10468 |      3976.00000 |          251.51 |
+linestats       | linestats_2_18  |               0 |               5 |               1 |         0.09983 |      3792.00000 |          263.71 |
+linestats       | linestats_2_19  |               0 |               5 |               1 |         0.09307 |      3535.00000 |          282.89 |
+linestats       | linestats_2_20  |               0 |               5 |               1 |         0.09449 |      3589.00000 |          278.63 |
+Complete.
 
 ```
 
 ---
 # Summary
 
-* Our simple benchmark shown that the third approach is the winner in my Macbook Pro and the optimum buffer size is around 64KBytes. We will use this value a default value for our buffer size in all fastgrep implementations.
+* Our simple benchmark shown that the third solution is the winner and the optimum buffer size is around 64KBytes. We will use this value as a default value for our buffer size in all of our benchmarks.
 
 * The memory mapped solution has a very good performance.
 
-* The first solution is 10x slower than that of the memory mapped solution.
+* The first solution is 20x slower than that of the memory mapped solution. **We should not use it in serious applications.**
 
-* The policy based design approach helps to create generic, flexible, and very fast file reading algorithms.
+* The policy based design approach help to create a generic, flexible, and fast file reading algorithm.
+
+---
+# The final version of our file reading algorithm
+
+``` c++
+    template <size_t BUFFER_SIZE, typename Parser> class FileReader {
+      public:
+        void operator()(const char *datafile, Parser &parser, const long offset = 0) {
+            char read_buffer[BUFFER_SIZE + 1];
+            int fd = ::open(datafile, O_RDONLY);
+            while (true) {
+                auto nbytes = ::read(fd, read_buffer, BUFFER_SIZE);
+                if (nbytes < 0) {
+                    std::stringstream writer;
+                    writer << "Cannot read file \"" << datafile << "\"";
+                    throw(std::runtime_error(writer.str()));
+                };
+                parser(read_buffer, read_buffer + nbytes); // Read buffer is processed using a templatized policy.
+                if (nbytes != static_cast<decltype(nbytes)>(BUFFER_SIZE)) { break; };
+            }
+            ::close(fd);
+        }
+    };
+```
 
 ---
 # Is our file reading algorithm fast?
@@ -286,13 +306,13 @@ private:
 ---
 # What have we done so far?
 
-* We have created a generic and reuseable file reading algorithm which might be one of the fastest available solution. See this [link](https://lemire.me/blog/2012/06/26/which-is-fastest-read-fread-ifstream-or-mmap/ "Lemire's blog") for more information.
+* We have created a generic file reading algorithm which might be one of the fastest available solution. See this [link](https://lemire.me/blog/2012/06/26/which-is-fastest-read-fread-ifstream-or-mmap/ "Lemire's blog") for more information. Note that we reuse our algorithm easily for different purposes.
 
 * Our benchmark results have shown that **linestats** command is about 40% faster than **wc -l**. The performance gain comes from below facts
 
-	* Tuning: We choose the best value for our buffer from the file reading benchmark.
+    * Tuning: We choose the best value for our buffer from the file reading benchmark.
 
-	* Inlining: The ability to inline functions at compile in C++ does contribute to the performance gain since our approach and the algorithm used in wc are mostly the same.
+    * Inlining: The ability to inline functions at compile in C++ does contribute to the performance gain since our approach and the algorithm used in wc are mostly the same.
 
 ---
 class: center, middle
@@ -301,9 +321,9 @@ class: center, middle
 ---
 # First version of [fastgrep](https://github.com/hungptit/fastgrep "A simple implementation of a grep like command")
 
-We have already had a fast file reading algorithm and below are policy classes that are used in our first working version of fastgrep command we need below classes
+We have already had a fast file reading algorithm and below are policy classes that are used to create the first working version of fastgrep command:
 
-* MessageFilter: This class is called within the file reading algorithm. It will take a string buffer break it into lines then display lines that match a given string pattern.
+* MessageFilter: This class is called within the file reading algorithm. It will take a string buffer break it into lines then display lines that match a given string pattern. Note that parsing line by line is not a fastest way to grep the content of a file, however, we will stay with this approach for the rest of this talk.
 
 * utils::Contains: This class check that a pattern is matched with a given text line.
 

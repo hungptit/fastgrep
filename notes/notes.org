@@ -1,0 +1,35 @@
+* Title:
+  How to write a fast grep like command using modern C++
+* Summary:
+  This talk will start with writing a simple line counting program and
+  make our program more complicated by each step using policy based
+  design approach. At the end of this talk we will be able to create a
+  very fast grep like command i.e it is faster than grep or
+  ripgrep. As much as of this talk will focus on how to write reusable
+  and high performance algorithms and some specific algorithms
+  designing that makes core algorithms have greater performance than
+  naive approaches.
+
+* Outline:
+** Requirements
+   + Reusable.
+   + Performance
+   + Usability
+** What is SIMD?
+** What is Policy based design
+** Steps
+*** How to read a file fast?
+*** A simple line counting command
+*** Performance analysis
+*** What is our bottle neck?
+*** wc hidden secrete.
+*** A simple exact text matching command
+*** What is the bottle neck?
+*** How can we fix it?
+*** Are we done?
+*** What is regex?
+*** A basic grep like command.
+*** More usable command line interface.
+*** Conclusion
+    + std::string is not fast by default and string related functionality written in + C++ might be significantly slower than a similar C code.
+    + Performance profiling tools are your friends if you want to write fast C++ code.

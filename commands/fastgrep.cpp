@@ -3,7 +3,7 @@
 #include "fmt/format.h"
 #include "message_filter.hpp"
 #include "utils/matchers.hpp"
-#include "utils/matchers_avx2.hpp"
+// #include "utils/matchers_avx2.hpp"
 #include "utils/regex_matchers.hpp"
 #include "utils/timestamp.hpp"
 #include <algorithm>
@@ -25,7 +25,7 @@ namespace {
     }
 
     template <typename Constraints> void filter(const scribe::MessageFilterParams &params) {
-        constexpr size_t BUFFER_SIZE = 1 << 16;
+        constexpr size_t BUFFER_SIZE = 1 << 20;
         Constraints cons(params);
         using MessageFilter = typename scribe::MessageFilter<Constraints>;
         MessageFilter filter(params);
@@ -62,12 +62,12 @@ int main(int argc, char *argv[]) {
     // clang-format off
     desc.add_options()
         ("help,h", "Print this help")
-		("verbose,v", "Display verbose information.")
-		("info", "Display information messages.")
-		("error", "Display error messages.")
-		("no-regex", "Do not use regex engine for pattern matching.")
-		("begin,b", po::value<std::string>(&begin_time), "Begin time in 'mm-dd-yyyy hh:mm:ss' format.")
-		("end,e", po::value<std::string>(&end_time), "End time in 'mm-dd-yyyy hh:mm:ss' format")
+        ("verbose,v", "Display verbose information.")
+        ("info", "Display information messages.")
+        ("error", "Display error messages.")
+        ("no-regex", "Do not use regex engine for pattern matching.")
+        ("begin,b", po::value<std::string>(&begin_time), "Begin time in 'mm-dd-yyyy hh:mm:ss' format.")
+        ("end,e", po::value<std::string>(&end_time), "End time in 'mm-dd-yyyy hh:mm:ss' format")
         ("arguments,a", po::value<std::vector<std::string>>(&args), "Search pattern and files")
         ("output,o", po::value<std::string>(&params.outfile), "Output file");
     // clang-format on
@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
 
     // Search for desired lines from given log files.
     if (vm.count("no-regex")) {
-        exec<utils::avx2::Contains>(params);
+        exec<utils::sse2::Contains>(params);
     } else {
         exec<utils::hyperscan::RegexMatcher>(params);
     }
