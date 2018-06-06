@@ -11,7 +11,6 @@ namespace fastgrep {
     class GrepPolicy {
       public:
         GrepPolicy(const std::string &patt) : matcher(patt) {}
-
         ~GrepPolicy() { process_linebuf(); }
 
         void process(const char *begin, const size_t len) {

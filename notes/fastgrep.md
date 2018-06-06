@@ -5,7 +5,7 @@ class: center, middle
 
 # Why?
 
-Our distributed system logs more than one billions log messages a day and we occasionally need to dive into our log files to troubleshoot production issues.
+Our distributed system logs more than one billions log messages a day and we occasionally need to dive into our log files to identify production issues.
 
 ---
 
@@ -55,7 +55,25 @@ Our distributed system logs more than one billions log messages a day and we occ
       + Storage: SSD
 
 ---
+# Introduction to generic programming
 
+??? Need to get the picture of Alex book.
+
+---
+# What is **Policy-based design** 
+
+``` text
+Policy-based design, also known as policy-based class design or policy-based programming, is a computer programming paradigm based on an idiom for C++ known as policies. It has been described as a compile-time variant of the strategy pattern, and has connections with C++ template metaprogramming. It was first popularized by Andrei Alexandrescu with his 2001 book Modern C++ Design and his column Generic<Programming> in the C/C++ Users Journal.
+```
+
+---
+# A sample application based on policy-based design
+
+``` C++
+
+```
+
+---
 # How to process command line interface in C++?
 
 ``` c++

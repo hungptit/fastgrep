@@ -21,7 +21,6 @@ const std::string pattern5 = "\b\w+nn\b";
 const std::string pattern6 = "[a-q][^u-z]{13}x";
 const std::string pattern7 = "Tom|Sawyer|Huckleberry|Finn";
 
-
 namespace {
     void exec(const std::string &command, const std::string &pattern) {
         std::string cmd = command + " '" + pattern + "' " + datafile + " > /dev/null";
@@ -35,9 +34,7 @@ BASELINE(pattern1, gnu_grep, number_of_samples, number_of_operations) {
 
 BENCHMARK(pattern1, ag, number_of_samples, number_of_operations) { exec("ag", pattern1); }
 
-BENCHMARK(pattern1, ripgrep, number_of_samples, number_of_operations) {
-    exec("rg", pattern1);
-}
+BENCHMARK(pattern1, ripgrep, number_of_samples, number_of_operations) { exec("rg", pattern1); }
 
 BENCHMARK(pattern1, fgrep, number_of_samples, number_of_operations) {
     exec("../commands/fgrep", pattern1);
@@ -58,9 +55,7 @@ BASELINE(pattern2, gnu_grep, number_of_samples, number_of_operations) {
 
 BENCHMARK(pattern2, ag, number_of_samples, number_of_operations) { exec("ag", pattern2); }
 
-BENCHMARK(pattern2, ripgrep, number_of_samples, number_of_operations) {
-    exec("rg", pattern2);
-}
+BENCHMARK(pattern2, ripgrep, number_of_samples, number_of_operations) { exec("rg", pattern2); }
 
 BENCHMARK(pattern2, fgrep, number_of_samples, number_of_operations) {
     exec("../commands/fgrep", pattern2);
@@ -77,9 +72,7 @@ BASELINE(pattern3, gnu_grep, number_of_samples, number_of_operations) {
 
 BENCHMARK(pattern3, ag, number_of_samples, number_of_operations) { exec("ag", pattern3); }
 
-BENCHMARK(pattern3, ripgrep, number_of_samples, number_of_operations) {
-    exec("rg", pattern3);
-}
+BENCHMARK(pattern3, ripgrep, number_of_samples, number_of_operations) { exec("rg", pattern3); }
 
 BENCHMARK(pattern3, fgrep, number_of_samples, number_of_operations) {
     exec("../commands/fgrep", pattern3);
@@ -90,15 +83,13 @@ BENCHMARK(pattern3, fastgrep, number_of_samples, number_of_operations) {
 }
 
 // pattern4
-BASELINE(pattern4, gnu_grep, number_of_samples, number_of_operations) {
+BASELINE(pattern4, grep, number_of_samples, number_of_operations) {
     exec("grep -E ", pattern4);
 }
 
 BENCHMARK(pattern4, ag, number_of_samples, number_of_operations) { exec("ag", pattern4); }
 
-BENCHMARK(pattern4, ripgrep, number_of_samples, number_of_operations) {
-    exec("rg", pattern4);
-}
+BENCHMARK(pattern4, ripgrep, number_of_samples, number_of_operations) { exec("rg", pattern4); }
 
 BENCHMARK(pattern4, fgrep, number_of_samples, number_of_operations) {
     exec("../commands/fgrep", pattern4);
@@ -108,17 +99,14 @@ BENCHMARK(pattern4, fastgrep, number_of_samples, number_of_operations) {
     exec("../commands/fastgrep", pattern4);
 }
 
-
 // pattern5
-BASELINE(pattern5, gnu_grep, number_of_samples, number_of_operations) {
+BASELINE(pattern5, grep, number_of_samples, number_of_operations) {
     exec("grep -E ", pattern5);
 }
 
 BENCHMARK(pattern5, ag, number_of_samples, number_of_operations) { exec("ag", pattern5); }
 
-BENCHMARK(pattern5, ripgrep, number_of_samples, number_of_operations) {
-    exec("rg", pattern5);
-}
+BENCHMARK(pattern5, ripgrep, number_of_samples, number_of_operations) { exec("rg", pattern5); }
 
 BENCHMARK(pattern5, fgrep, number_of_samples, number_of_operations) {
     exec("../commands/fgrep", pattern5);
@@ -129,15 +117,13 @@ BENCHMARK(pattern5, fastgrep, number_of_samples, number_of_operations) {
 }
 
 // pattern6
-BASELINE(pattern6, gnu_grep, number_of_samples, number_of_operations) {
+BASELINE(pattern6, grep, number_of_samples, number_of_operations) {
     exec("grep -E ", pattern6);
 }
 
 BENCHMARK(pattern6, ag, number_of_samples, number_of_operations) { exec("ag", pattern6); }
 
-BENCHMARK(pattern6, ripgrep, number_of_samples, number_of_operations) {
-    exec("rg", pattern6);
-}
+BENCHMARK(pattern6, ripgrep, number_of_samples, number_of_operations) { exec("rg", pattern6); }
 
 BENCHMARK(pattern6, fgrep, number_of_samples, number_of_operations) {
     exec("../commands/fgrep", pattern6);
@@ -148,15 +134,13 @@ BENCHMARK(pattern6, fastgrep, number_of_samples, number_of_operations) {
 }
 
 // pattern7
-BASELINE(pattern7, gnu_grep, number_of_samples, number_of_operations) {
+BASELINE(pattern7, grep, number_of_samples, number_of_operations) {
     exec("grep -E ", pattern7);
 }
 
 BENCHMARK(pattern7, ag, number_of_samples, number_of_operations) { exec("ag", pattern7); }
 
-BENCHMARK(pattern7, ripgrep, number_of_samples, number_of_operations) {
-    exec("rg", pattern7);
-}
+BENCHMARK(pattern7, ripgrep, number_of_samples, number_of_operations) { exec("rg", pattern7); }
 
 BENCHMARK(pattern7, fgrep, number_of_samples, number_of_operations) {
     exec("../commands/fgrep", pattern7);
@@ -165,3 +149,4 @@ BENCHMARK(pattern7, fgrep, number_of_samples, number_of_operations) {
 BENCHMARK(pattern7, fastgrep, number_of_samples, number_of_operations) {
     exec("../commands/fastgrep", pattern7);
 }
+
