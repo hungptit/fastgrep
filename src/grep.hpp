@@ -39,7 +39,6 @@ namespace fastgrep {
         size_t lines = 1;
         size_t pos = 0;
         utils::hyperscan::RegexMatcher matcher;
-
       protected:
         void process_line(const char *begin, const size_t len) {
             if (matcher.is_matched(begin, len)) {
@@ -86,10 +85,10 @@ namespace fastgrep {
             pos += len;
         }
 
+        utils::hyperscan::RegexMatcher matcher;
         size_t lines = 0;
         size_t pos = 0;
         std::string linebuf;
-        utils::hyperscan::RegexMatcher matcher;
 
       protected:
         void process_line(const char *begin, const size_t len) {
