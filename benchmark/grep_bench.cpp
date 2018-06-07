@@ -17,7 +17,7 @@ const std::string pattern1 = "Twain";
 const std::string pattern2 = "(?i)Twain";
 const std::string pattern3 = "[a-z]shing";
 const std::string pattern4 = "Huck[a-zA-Z]+|Saw[a-zA-Z]+";
-const std::string pattern5 = "\b\w+nn\b";
+const std::string pattern5 = "\b\\w+nn\b";
 const std::string pattern6 = "[a-q][^u-z]{13}x";
 const std::string pattern7 = "Tom|Sawyer|Huckleberry|Finn";
 
