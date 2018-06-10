@@ -42,7 +42,7 @@
 * Experimental setup
 ** Test machines
    + Core i7 desktop/laptop with Linux kernel 4.17.
-     - CPU: 
+     - CPU:
      - Memmory: 16 GBytes
      - Kernel: Linux 4.17
      - Filesystem: ext4
@@ -109,32 +109,19 @@
    + C style interface allow us to do more i.e supporting SIMD and make use of excellent C functions such as memchr.
    + Zero copy gurantee.
 * How search for a pattern from our text data?
-** Search algorithm
-   + Constraint:
-     - Minimize memory copy.
-     - Optimize for data locality.
-   + Possible approachs
-     - Memory shifting
-     - Caching lines spread across chunks.
-   + Our approach:
-     - We cache lines that spread across chunks in a separate buffer.
-** Chunk parsing algorithm. 
-   + Show the algorithm
-** Exact text matching algorithms
-   + Complexity O(mn)
-*** A simple exact text matching algorithm using std::find.
-   + We need to make a copy for each line.
-   + We can improve the performance using std::string_view
-   + TODO: Create a command that can be used to study the performance of fgrep.
-*** fgrep vs grep for exact text matching 
-    + Run the benchmark to show the performance of fgrep.
-*** What is the bottle neck?
-    + perf command shows that std::string::find is the bottle neck.
-*** How can we improve the performance of fgrep?    
-    + Show the article.
-*** A SSE2 version of strstr
-*** A AVX2 version of strstr
-*** Benchmark results
+** Parse line-by-line
+** Use std::string::find algorithm
+** fgrep vs grep for exact text matching
+** Why it is so slow?
+   + Need a picture of why thing is slow
+** Use SSE2 version of string find algorithm
+** Use AVX2 version of string find algorithm
+** Can we do better with our parsing policy?
+   + Show the output of perf command for a large log file.
+** Avoid memory copy if you want to write high performance code!
+   + Show the output of perf stat command for an improved algorithm.
+** Final algorithm.
+** Benchmark results
 ** Are we done?
    + Our command only supports exact text matching and we do need to support regex pattern.
 *** What is regular expression?
@@ -145,8 +132,11 @@
       searching algorithms for "find" or "find and replace" operations
       on strings, or for input validation.
     + [Regular Expression Matching Can Be Simple And Fast](https://swtch.com/~rsc/regexp/regexp1.html)
-*** Shall we write our own regex engine?
-    + Is is a very hard task and we should avoid it if possible.
+*** std::regex?
+    + Have a simple policy that use std::regex
+*** fgrep vs grep benchmark
+*** Why fgrep is slow?
+    + Show the output of perf command.
 *** Performance comparison of C/C+ regular expression engines.
     + [[https://rust-leipzig.github.io/regex/2017/03/28/comparison-of-regex-engines/][Comparison of regex engines]].
     + Why don't we use std::regex?
@@ -162,15 +152,16 @@
 ** Performance analysis
 *** Searching for patterns from Mark Twain book (16013977 bytes)
 *** Searching for patterns from a log file (676960393 bytes)
-*** Some random notes
+** Random notes
     + Use memory map does not speed up file reading algorithm.
     + grep and ripgrep has better I/O performance than fgrep for small files.
     + fgrep outperform other commands for large log files.
     + ag does not support files that larger than 2Gbytes.
 ** Conclusion
-    + Performance profiling tools are your friends.
-    + Need to avoid memory copy and improve locality of you data if possible.
-    + std::string is not fast by default and string related
-      functionality written in + C++ might be significantly slower
+    + Care about your interface, it might affect the performance of your code.
+    + Avoid memory copy if you want to write high performance code.
+    + std::string::find is not fast by default and string related
+      functionality written in C++ might be significantly slower
       than a similar C code.
-    + C++ allow use to write reusable and high performance code.
+    + C++ allows us to write reusable and efficient code.
+    + Performance profiling tools are your friends.
