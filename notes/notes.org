@@ -75,7 +75,6 @@
    + We do not support Unicode strings.
    + We do not support Windows.
    + Require a decent C++ compiler.
-
 ** The anatomy of a grep command
    + Gather files to search.
    + Read text data from files
