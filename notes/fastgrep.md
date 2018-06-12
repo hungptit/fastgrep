@@ -73,6 +73,8 @@ performance of multimedia use.
 
 * [perf](https://perf.wiki.kernel.org/index.php/Main_Page)
 
+* [strace](https://strace.io/)
+
 ---
 # Test environments
 
@@ -105,13 +107,13 @@ class: center, middle
 ---
 # The anatomy of a text-searching tool
 
-    * Gather files to search.
+* Gather files to search.
 
-    * Read text data from files
+* Read text data from files
 
-    * Search for a pattern from the text data.
+* Search for a pattern from the text data.
 
-    * Print out the search results
+* Print out the search results
 
 ---
 class: center, middle
@@ -136,6 +138,18 @@ class: center, middle
 ---
 # A memory mapped solution using Boost
 
+``` c++
+    size_t read_memmap(const char *afile) {
+        boost::iostreams::mapped_file mmap(afile, boost::iostreams::mapped_file::readonly);
+        auto begin = mmap.const_data();
+        auto end = begin + mmap.size();
+        size_t counter = 0;
+        for (auto iter = begin; iter != end; ++iter) {
+            counter += *iter == EOL;
+        }
+        return counter;
+    }
+```
 
 ---
 # A memory mapped solution using low-level APIs
@@ -158,7 +172,7 @@ class: center, middle
 ---
 # Read data in blocks using low-level APIs
 
-``` c++ 
+``` c++
     size_t block_count = (buf.st_size / BUFFER_SIZE) + (buf.st_size % BUFFER_SIZE != 0);
     for (size_t blk = 0; blk < block_count; ++blk) {
         long nbytes = ::read(fd, read_buffer, BUFFER_SIZE);
@@ -177,315 +191,183 @@ class: center, middle
 ---
 # Benchmark results
 
+``` c++
+hungptit@hungptit ~/w/i/benchmark> ./file_read
+Celero
+Timer resolution: 0.001000 us
+-----------------------------------------------------------------------------------------------------------------------------------------------
+Group           |   Experiment    |   Prob. Space   |     Samples     |   Iterations    |    Baseline     |  us/Iteration   | Iterations/sec  |
+-----------------------------------------------------------------------------------------------------------------------------------------------
+read            | boost_memmap    |            Null |              40 |               2 |         1.00000 |     10064.00000 |           99.36 |
+read            | mmap_reader_mem |            Null |              40 |               2 |         0.59599 |      5998.00000 |          166.72 |
+read            | memmap          |            Null |              40 |               2 |         0.59251 |      5963.00000 |          167.70 |
+read            | read_chunk      |            Null |              40 |               2 |         0.69356 |      6980.00000 |          143.27 |
+read            | ioutils_std     |            Null |              40 |               2 |         1.91062 |     19228.50000 |           52.01 |
+read            | ioutils_memchr  |            Null |              40 |               2 |         0.69893 |      7034.00000 |          142.17 |
+Complete.
+```
+
+---
+# Benchmark results (cont)
+
+``` text
+hungptit@hungptit ~/w/i/benchmark> strace -c ./file_read chunk 3200.txt
+Number of lines: 302278
+% time     seconds  usecs/call     calls    errors syscall
+------ ----------- ----------- --------- --------- ----------------
+86.58    0.001419           5       250           read
+ 4.21    0.000069           4        17           mmap
+ 3.29    0.000054           4        12           mprotect
+ 2.01    0.000033           4         7           openat
+ 1.10    0.000018           2         7           close
+ 1.10    0.000018           2         8           fstat
+ 0.49    0.000008           8         1           write
+ 0.37    0.000006           6         1           munmap
+ 0.31    0.000005           1         3           brk
+ 0.12    0.000002           1         2           rt_sigaction
+ 0.12    0.000002           2         1           arch_prctl
+ 0.12    0.000002           2         1           set_tid_address
+ 0.06    0.000001           1         1           rt_sigprocmask
+ 0.06    0.000001           1         1           set_robust_list
+ 0.06    0.000001           1         1           prlimit64
+ 0.00    0.000000           0         1         1 access
+ 0.00    0.000000           0         1           execve
+------ ----------- ----------- --------- --------- ----------------
+100.00    0.001639                   315         1 total
+```
+
+---
+# Benchmark results (cont)
+
+``` text
+hungptit@hungptit ~/w/i/benchmark> strace -c ./file_read mmap 3200.txt
+Number of lines: 302278
+% time     seconds  usecs/call     calls    errors syscall
+------ ----------- ----------- --------- --------- ----------------
+36.33    0.000311         155         2           munmap
+26.52    0.000227          12        18           mmap
+11.33    0.000097           8        12           mprotect
+ 7.59    0.000065           9         7           openat
+ 3.27    0.000028           3         8           fstat
+ 2.92    0.000025           5         5           read
+ 2.80    0.000024           3         7           close
+ 2.22    0.000019          19         1         1 access
+ 1.17    0.000010          10         1           execve
+ 1.05    0.000009           9         1           write
+ 1.05    0.000009           3         3           brk
+ 0.93    0.000008           8         1           madvise
+ 0.70    0.000006           3         2           rt_sigaction
+ 0.47    0.000004           4         1           arch_prctl
+ 0.47    0.000004           4         1           set_tid_address
+ 0.47    0.000004           4         1           prlimit64
+ 0.35    0.000003           3         1           rt_sigprocmask
+ 0.35    0.000003           3         1           set_robust_list
+------ ----------- ----------- --------- --------- ----------------
+100.00    0.000856                    73         1 total
+```
+
+---
+# Why do we use memchr?
+
+``` text
+#
+# Overhead  Command    Shared Object     Symbol
+# ........  .........  ................  .......................................
+#
+61.98%  file_read  libc-2.26.so      [.] __memchr_sse2
+6.55%  file_read  [kernel.vmlinux]  [k] filemap_map_pages
+6.06%  file_read  file_read         [.] main
+3.76%  file_read  ld-2.26.so        [.] strcmp
+3.75%  file_read  ld-2.26.so        [.] _dl_check_map_versions
+3.58%  file_read  ld-2.26.so        [.] _dl_lookup_symbol_x
+3.49%  file_read  libc-2.26.so      [.] _dl_addr
+3.41%  file_read  [kernel.vmlinux]  [k] unlock_page
+3.07%  file_read  [kernel.vmlinux]  [k] lock_page_memcg
+3.05%  file_read  [kernel.vmlinux]  [k] page_remove_rmap
+1.15%  file_read  [kernel.vmlinux]  [k] vmacache_find
+0.14%  perf       [kernel.vmlinux]  [k] apic_timer_interrupt
+0.01%  perf       [kernel.vmlinux]  [k] end_repeat_nmi
+0.00%  perf       [kernel.vmlinux]  [k] __intel_pmu_enable_all.constprop.21
+```
+
+---
+# Summary
+
+* Low level memory mapped files and reading in chunks are fastest solutions.
+
+* memchr does significantly speedup our line counting algorithms.
+
+* Both memory mapped files and reading in chunks algorithms can be used for our purposes.
 
 ---
 class: center, middle
 # How to search a pattern from the text data fast?
 
 ---
-class: center, middle
-# How to print out search results fast?
-
----
-
-
-class: center, middle
-
-# How to write an efficient file reading algorithms
-
----
-# Benchmark results
-
-``` text
-Celero
-Timer resolution: 0.001000 us
------------------------------------------------------------------------------------------------------------------------------------------------
-     Group      |   Experiment    |   Prob. Space   |     Samples     |   Iterations    |    Baseline     |  us/Iteration   | Iterations/sec  |
------------------------------------------------------------------------------------------------------------------------------------------------
-linestats       | iostream_linest |               0 |               5 |               1 |         1.00000 |     37984.00000 |           26.33 |
-linestats       | memmap_linestat |               0 |               5 |               1 |         0.26572 |     10093.00000 |           99.08 |
-linestats       | linestats_2_12  |               0 |               5 |               1 |         0.21967 |      8344.00000 |          119.85 |
-linestats       | linestats_2_13  |               0 |               5 |               1 |         0.14482 |      5501.00000 |          181.79 |
-linestats       | linestats_2_14  |               0 |               5 |               1 |         0.11734 |      4457.00000 |          224.37 |
-linestats       | linestats_2_15  |               0 |               5 |               1 |         0.11768 |      4470.00000 |          223.71 |
-linestats       | linestats_2_16  |               0 |               5 |               1 |         0.10154 |      3857.00000 |          259.27 |
-linestats       | linestats_2_17  |               0 |               5 |               1 |         0.10468 |      3976.00000 |          251.51 |
-linestats       | linestats_2_18  |               0 |               5 |               1 |         0.09983 |      3792.00000 |          263.71 |
-linestats       | linestats_2_19  |               0 |               5 |               1 |         0.09307 |      3535.00000 |          282.89 |
-linestats       | linestats_2_20  |               0 |               5 |               1 |         0.09449 |      3589.00000 |          278.63 |
-Complete.
-
-```
-
----
-# Summary
-
-* Our simple benchmark shown that the third solution is the winner and the optimum buffer size is around 64KBytes. We will use this value as a default value for our buffer size in all of our benchmarks.
-
-* The memory mapped solution has a very good performance.
-
-* The first solution is 20x slower than that of the memory mapped solution. **We should not use it in serious applications.**
-
-* The policy based design approach help to create a generic, flexible, and fast file reading algorithm.
-
----
-# The final version of our file reading algorithm
+# Simple exact text matching algorithm
 
 ``` c++
-    template <size_t BUFFER_SIZE, typename Parser> class FileReader {
-      public:
-        void operator()(const char *datafile, Parser &parser, const long offset = 0) {
-            char read_buffer[BUFFER_SIZE + 1];
-            int fd = ::open(datafile, O_RDONLY);
-            while (true) {
-                auto nbytes = ::read(fd, read_buffer, BUFFER_SIZE);
-                if (nbytes < 0) {
-                    std::stringstream writer;
-                    writer << "Cannot read file \"" << datafile << "\"";
-                    throw(std::runtime_error(writer.str()));
-                };
-                parser(read_buffer, read_buffer + nbytes); // Read buffer is processed using a templatized policy.
-                if (nbytes != static_cast<decltype(nbytes)>(BUFFER_SIZE)) { break; };
-            }
-            ::close(fd);
-        }
-    };
-```
+void process(const char *begin, const size_t len) {
+  const char *start = begin;
+  const char *end = begin + len;
+  const char *ptr = begin;
+  while ((ptr = static_cast<const char *>(memchr(ptr, EOL, end - ptr)))) {
+    linebuf.append(start, ptr - start + 1);
+    process_linebuf();
+    linebuf.clear();
 
----
-# Is our file reading algorithm fast?
+    // Update parameters
+    start = ++ptr;
+    ++lines;
 
-To show that our file reading algorithm is fast enough we will create a simple command which is similar to "wc -l" command and benchmark it with a reasonable big scribe log file.
-
----
-# A line counting filter.
-``` c++
-class LineStats {
-public:
-  void operator()(const char *begin, const char *end) {
-    const char *ptr = begin;
-    while (
-        (ptr = static_cast<const char *>(memchr(ptr, EOL, end - ptr)))) {
-      ++lines;
-      const size_t new_eol = file_size + ptr - begin;
-      const size_t len = new_eol - current_eol - 1;
-      max_len = len > max_len ? len : max_len;
-      min_len = len < min_len ? len : min_len;
-      current_eol = new_eol;
-      ++ptr;
-    }
-    file_size += end - begin;
+    // Stop if we reach the end of the buffer.
+    if (start == end)
+      break;
   }
-  size_t file_size = 0;
-  size_t lines = 0;
-  size_t max_len = std::numeric_limits<size_t>::min();
-  size_t min_len = std::numeric_limits<size_t>::max();
-  size_t current_eol = 0;
 
-private:
-  static constexpr char EOL = '\n';
+  // Update the line buffer with leftover data.
+  if (start != end) {
+    linebuf.append(start, end - start);
+    process_linebuf();
+  }
+  pos += len;
+}
+```
+---
+# Simple exact text matching alg (cont)
+
+``` c++
+void process_line(const char *begin, const size_t len) {
+  if (matcher.is_matched(begin, len)) {
+    fmt::print("{0}:{1}", lines, std::string(begin, len));
+  }
+}
+
+void process_linebuf() { process_line(linebuf.data(), linebuf.size()); }
+
+struct ExactMatch {
+  explicit ExactMatch(const std::string &patt) : pattern(patt) {}
+  bool is_matched(const std::string &line) {
+    if (line.size() < pattern.size()) {
+      return false;
+    }
+    return line.find(pattern) != std::string::npos;
+  }
+  const std::string pattern;
 };
-```
----
-# Benchmark results for wc -l
 
-``` text
- Performance counter stats for 'wc -l /mnt/weblogs/scribe/workqueue-execution/workqueue-execution-2018-04-03_00000' (5 runs):
-
-       4300.374643 task-clock                #    0.999 CPUs utilized            ( +-  0.03% )
-                11 context-switches          #    0.003 K/sec                    ( +-  7.68% )
-                 0 cpu-migrations            #    0.000 K/sec                    ( +- 61.24% )
-               170 page-faults               #    0.040 K/sec
-     9,469,917,841 cycles                    #    2.202 GHz                      ( +-  0.03% )
-   <not supported> stalled-cycles-frontend
-   <not supported> stalled-cycles-backend
-     3,910,542,147 instructions              #    0.41  insns per cycle          ( +-  0.02% )
-       907,972,719 branches                  #  211.138 M/sec                    ( +-  0.02% )
-        21,540,040 branch-misses             #    2.37% of all branches          ( +-  0.21% )
-
-       4.305678789 seconds time elapsed                                          ( +-  0.03% )
-```
----
-# Benchmark results for linestats
-
-``` text
- Performance counter stats for './linestats /mnt/weblogs/scribe/workqueue-execution/workqueue-execution-2018-04-03_00000' (5 runs):
-
-       2690.545592 task-clock                #    0.998 CPUs utilized            ( +-  0.14% )
-                22 context-switches          #    0.008 K/sec                    ( +-  7.31% )
-                 1 cpu-migrations            #    0.000 K/sec                    ( +- 31.18% )
-               361 page-faults               #    0.134 K/sec                    ( +-  0.06% )
-     5,924,807,135 cycles                    #    2.202 GHz                      ( +-  0.14% )
-   <not supported> stalled-cycles-frontend
-   <not supported> stalled-cycles-backend
-     2,290,821,363 instructions              #    0.39  insns per cycle          ( +-  0.00% )
-       474,603,918 branches                  #  176.397 M/sec                    ( +-  0.00% )
-         9,564,301 branch-misses             #    2.02% of all branches          ( +-  0.92% )
-
-       2.695044748 seconds time elapsed                                          ( +-  0.14% )
 ```
 
 ---
-# What have we done so far?
+# fgrep vs grep
 
-* We have created a generic file reading algorithm which might be one of the fastest available solution. See this [link](https://lemire.me/blog/2012/06/26/which-is-fastest-read-fread-ifstream-or-mmap/ "Lemire's blog") for more information. Note that we reuse our algorithm easily for different purposes.
-
-* Our benchmark results have shown that **linestats** command is about 40% faster than **wc -l**. The performance gain comes from below facts
-
-    * Tuning: We choose the best value for our buffer from the file reading benchmark.
-
-    * Inlining: The ability to inline functions at compile in C++ does contribute to the performance gain since our approach and the algorithm used in wc are mostly the same.
+<!-- TODO: Need some data here -->
 
 ---
-class: center, middle
-# How to write a fast string search algorithm?
+background-image: url(https://strategylab.ca/wp-content/uploads/2013/09/impossible.jpg)
 
 ---
-# First version of [fastgrep](https://github.com/hungptit/fastgrep "A simple implementation of a grep like command")
-
-We have already had a fast file reading algorithm and below are policy classes that are used to create the first working version of fastgrep command:
-
-* MessageFilter: This class is called within the file reading algorithm. It will take a string buffer break it into lines then display lines that match a given string pattern. Note that parsing line by line is not a fastest way to grep the content of a file, however, we will stay with this approach for the rest of this talk.
-
-* utils::Contains: This class check that a pattern is matched with a given text line.
-
----
-# A message filter class
-
-``` c++
-    template <typename Constraints> class MessageFilter {
-      public:
-        ~MessageFilter() {
-            if (!buffer.empty()) process();
-        }
-        void operator()(const char *begin, const char *end) {
-            const char *start = begin;
-            const char *ptr = begin;
-            while ((ptr = static_cast<const char *>(memchr_avx2(ptr, EOL, end - ptr)))) {
-                buffer.append(start, ptr - start + 1);
-                ++lines;
-                process();
-                start = ++ptr;
-                if (start == end) break;
-            }
-            if (start != end) { buffer.append(start, end - start); }
-        }
-
-      private:
-        std::string buffer;
-        size_t lines;
-        Constraints constraints;
-        static constexpr char EOL = '\n';
-        void process() {
-            if (constraints(buffer)) fmt::print("{}", buffer.data());
-            buffer.clear(); // Reset the buffer.
-        }
-    };
-```
----
-# An exact pattern matching class
-
-``` c++
-    namespace baseline {
-        // Search for a sub string.
-        class Contains {
-          public:
-            explicit Contains(const std::string &patt) : pattern(patt) {}
-            bool operator()(const std::string &line) {
-                if (line.size() < pattern.size()) { return false; }
-                return line.find(pattern) != std::string::npos;
-            }
-
-          private:
-            const std::string pattern;
-        };
-    } // namespace baseline
-```
----
-class: center, middle
-# Benchmark results
-
----
-# grep
-``` text
-        Command being timed: "grep Starting1 /mnt/weblogs/scribe/workqueue-execution/workqueue-execution-2018-04-03_00000"
-        User time (seconds): 5.27
-        System time (seconds): 1.20
-        Percent of CPU this job got: 99%
-        Elapsed (wall clock) time (h:mm:ss or m:ss): 0:06.48
-        Average shared text size (kbytes): 0
-        Average unshared data size (kbytes): 0
-        Average stack size (kbytes): 0
-        Average total size (kbytes): 0
-        Maximum resident set size (kbytes): 1924
-        Average resident set size (kbytes): 0
-        Major (requiring I/O) page faults: 0
-        Minor (reclaiming a frame) page faults: 743
-        Voluntary context switches: 2
-        Involuntary context switches: 13
-        Swaps: 0
-        File system inputs: 0
-        File system outputs: 0
-        Socket messages sent: 0
-        Socket messages received: 0
-        Signals delivered: 0
-        Page size (bytes): 4096
-        Exit status: 1
-```
----
-# fastgrep
-``` text
-        Command being timed: "fastgrep --no-regex -p Starting1 /mnt/weblogs/scribe/workqueue-execution/workqueue-execution-2018-04-03_00000"
-        User time (seconds): 42.98
-        System time (seconds): 1.41
-        Percent of CPU this job got: 99%
-        Elapsed (wall clock) time (h:mm:ss or m:ss): 0:44.45
-        Average shared text size (kbytes): 0
-        Average unshared data size (kbytes): 0
-        Average stack size (kbytes): 0
-        Average total size (kbytes): 0
-        Maximum resident set size (kbytes): 3048
-        Average resident set size (kbytes): 0
-        Major (requiring I/O) page faults: 0
-        Minor (reclaiming a frame) page faults: 929
-        Voluntary context switches: 11
-        Involuntary context switches: 78
-        Swaps: 0
-        File system inputs: 0
-        File system outputs: 0
-        Socket messages sent: 0
-        Socket messages received: 0
-        Signals delivered: 0
-        Page size (bytes): 4096
-```
-
----
-# Why our fastgrep command is very slow?
-
-Benchmark results have shown that our fastgrep command is about 7x slower than GNU grep. Our profiling results using perf command show that fastgrep has spent a large portion of time on std::string::find command. It is obvious that we need a better string find algorithm.
-
-``` text
-# Overhead         Command        Shared Object
-# ........  ..............  ...................  ..............................................................................................
-#
-    80.09%  message_filter  libstdc++.so.6.0.21  [.] _ZNKSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE4findEPKcmm
-    10.11%  message_filter  libc-2.23.so         [.] __memcmp_sse4_1
-     2.86%  message_filter  message_filter       [.] _ZN6scribe10FileReaderILm65536ENS_13MessageFilterINS_17SimpleConstraintsIN5utils8baseline8
-     1.82%  message_filter  [kernel.kallsyms]    [k] copy_user_enhanced_fast_string
-     0.94%  message_filter  libc-2.23.so         [.] __memcpy_avx_unaligned
-     0.38%  message_filter  libstdc++.so.6.0.21  [.] _ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE9_M_appendEPKcm
-     0.32%  message_filter  [kernel.kallsyms]    [k] radix_tree_lookup_slot
-     0.22%  message_filter  [kernel.kallsyms]    [k] ii_iovec_copy_to_user
-     0.19%  message_filter  libstdc++.so.6.0.21  [.] memcmp@plt
-     0.16%  message_filter  [kernel.kallsyms]    [k] do_generic_file_read.clone.0
-     0.15%  message_filter  ld-2.23.so           [.] _dl_lookup_symbol_x
-     0.13%  message_filter  [kernel.kallsyms]    [k] find_get_page
-     0.13%  message_filter  [kernel.kallsyms]    [k] put_page
-```
----
-# How can we improve the performance of std::string::find?
-
-![alt text](pictures/pic1.png)
+background-image: url(pictures/pic1.png)
 
 ---
 
@@ -546,189 +428,54 @@ size_t FORCE_INLINE avx2_strstr_anysize(const char *s, size_t n,
 ---
 # Micro-benchmark results
 
-``` text
-2018-04-04 01:08:09
-Running ./string
-Run on (88 X 2199.81 MHz CPU s)
-CPU Caches:
-  L1 Data 32K (x44)
-  L1 Instruction 32K (x44)
-  L2 Unified 256K (x44)
-  L3 Unified 56320K (x2)
---------------------------------------------------------
-Benchmark                 Time           CPU Iterations
---------------------------------------------------------
-std_string_find        1153 ns       1152 ns     607371
-sse2_string_find        170 ns        170 ns    4098694
-avx2_string_find        113 ns        113 ns    6204882
+---
+# SSE2-fgrep benchmark results
+
+---
+# AVX2-fgrep benchmark results
+
+---
+# Summary
+
+* std::string::find is not optimized.
+
+* We do need std::string_view feature to support in-place parsing.
+
+---
+background-image: url(pictures/Are+we+done+yet.png)
+
+---
+# std::regex
+
+``` c++
+struct RegexMatcher {
+  RegexMatcher(const std::string &patt) : search_pattern(patt) {}
+  bool is_matched(const char *begin, const size_t len) {
+    return std::regex_search(begin, begin + len, search_pattern);
+  }
+  std::regex search_pattern;
+};
 ```
 
 ---
-# AVX2 fastgrep benchmark results
+# fgrep vs grep vs ripgrep vs ag
 
-``` text
-        Command being timed: "fastgrep --no-regex -p Starting1 /mnt/weblogs/scribe/workqueue-execution/workqueue-execution-2018-04-03_00000"
-        User time (seconds): 4.74
-        System time (seconds): 1.31
-        Percent of CPU this job got: 99%
-        Elapsed (wall clock) time (h:mm:ss or m:ss): 0:06.07
-        Average shared text size (kbytes): 0
-        Average unshared data size (kbytes): 0
-        Average stack size (kbytes): 0
-        Average total size (kbytes): 0
-        Maximum resident set size (kbytes): 3048
-        Average resident set size (kbytes): 0
-        Major (requiring I/O) page faults: 0
-        Minor (reclaiming a frame) page faults: 929
-        Voluntary context switches: 9
-        Involuntary context switches: 11
-        Swaps: 0
-        File system inputs: 0
-        File system outputs: 0
-        Socket messages sent: 0
-        Socket messages received: 0
-        Signals delivered: 0
-        Page size (bytes): 4096
-        Exit status: 0
+``` c++
+hungptit@hungptit ~/w/f/benchmark> ./grep_bench -g pattern1
+Celero
+Timer resolution: 0.001000 us
+-----------------------------------------------------------------------------------------------------------------------------------------------
+Group           |   Experiment    |   Prob. Space   |     Samples     |   Iterations    |    Baseline     |  us/Iteration   | Iterations/sec  |
+-----------------------------------------------------------------------------------------------------------------------------------------------
+pattern1        | gnu_grep        |            Null |              10 |               1 |         1.00000 |     24237.00000 |           41.26 |
+pattern1        | ag              |            Null |              10 |               1 |         2.36679 |     57364.00000 |           17.43 |
+pattern1        | ripgrep         |            Null |              10 |               1 |         0.47122 |     11421.00000 |           87.56 |
+pattern1        | fgrep           |            Null |              10 |               1 |        20.86409 |    505683.00000 |            1.98 |
+Complete.
 ```
 
 ---
-class: center, middle
-# Benchmar results in my Macbook Pro
-
----
-# grep
-
-``` text
-015249:commands hdang$ /usr/bin/time -lp grep Starting1 ../data/workqueue-execution_current
-real         3.27
-user         3.20
-sys          0.04
-   3162112  maximum resident set size
-         0  average shared memory size
-         0  average unshared data size
-         0  average unshared stack size
-       821  page reclaims
-         0  page faults
-         0  swaps
-         0  block input operations
-         0  block output operations
-         0  messages sent
-         0  messages received
-         0  signals received
-         2  voluntary context switches
-      1470  involuntary context switches
-```
-
----
-# Brew grep
-
-``` text
-015249:commands hdang$ /usr/bin/time -lp ggrep Starting1 ../data/workqueue-execution_current
-real         0.12
-user         0.08
-sys          0.03
-   3264512  maximum resident set size
-         0  average shared memory size
-         0  average unshared data size
-         0  average unshared stack size
-       813  page reclaims
-         0  page faults
-         0  swaps
-         0  block input operations
-         0  block output operations
-         0  messages sent
-         0  messages received
-         0  signals received
-         2  voluntary context switches
-        44  involuntary context switches
-```
-
----
-# ag
-
-``` text
-015249:commands hdang$ /usr/bin/time -lp ag Starting1 ../data/workqueue-execution_current
-real         0.16
-user         0.03
-sys          0.12
- 190394368  maximum resident set size
-         0  average shared memory size
-         0  average unshared data size
-         0  average unshared stack size
-     47975  page reclaims
-         0  page faults
-         0  swaps
-         0  block input operations
-         0  block output operations
-         0  messages sent
-         0  messages received
-         0  signals received
-         9  voluntary context switches
-        39  involuntary context switches
-```
-
----
-# ripgrep
-
-``` text
-015249:commands hdang$ /usr/bin/time -lp rg Starting1 ../data/workqueue-execution_current
-real         0.14
-user         0.09
-sys          0.05
-   4915200  maximum resident set size
-         0  average shared memory size
-         0  average unshared data size
-         0  average unshared stack size
-      1216  page reclaims
-         0  page faults
-         0  swaps
-         0  block input operations
-         0  block output operations
-         0  messages sent
-         0  messages received
-         0  signals received
-         2  voluntary context switches
-        47  involuntary context switches
-```
-
----
-# fastgrep
-
-``` text
-015249:commands hdang$ /usr/bin/time -lp ./fastgrep --no-regex -p Starting1 ../data/workqueue-execution_current
-real         0.07
-user         0.02
-sys          0.03
-   3198976  maximum resident set size
-         0  average shared memory size
-         0  average unshared data size
-         0  average unshared stack size
-       797  page reclaims
-         0  page faults
-         0  swaps
-         0  block input operations
-         0  block output operations
-         0  messages sent
-         0  messages received
-         0  signals received
-         2  voluntary context switches
-        48  involuntary context switches
-```
-
----
-# What have we learned?
-
-* Benchmarking/profiling tools are your friends when debugging/investigating performance issues.
-
-* Optimized string matching algorithms do significantly improve the performance of fastgrep.
-
----
-# Are we done?
-
-* We do need to support regular expression.
-
-* Allow users to filter out log messages using timestamps.
+background-image: url(pictures/too-slow.jpg)
 
 ---
 # Regular expression
@@ -738,191 +485,126 @@ sys          0.03
 * [Comparison of regex engines.](https://rust-leipzig.github.io/regex/2017/03/28/comparison-of-regex-engines/)
 
 ---
-# A simple regex matcher using hyperscan
+# A simple matcher policy using hyperscan
 
 ``` c++
-class RegexMatcher {
-public:
-  explicit RegexMatcher(const std::string &patt) {
-    pattern = patt;
-    hs_compile_error_t *compile_err;
-    hs_compile(pattern.c_str(), HS_FLAG_DOTALL, HS_MODE_BLOCK, NULL, &database,
-               &compile_err);
-    hs_alloc_scratch(database, &scratch);
+const bool is_matched(const char *data, const size_t len) {
+  if (data == nullptr)
+    return true;
+  auto errcode =
+      hs_scan(database, data, len, 0, scratch, event_handler, nullptr);
+  if (errcode == HS_SUCCESS) {
+    return false;
+  } else if (errcode == HS_SCAN_TERMINATED) {
+    return true;
+  } else {
+    throw std::runtime_error("Unable to scan the input buffer");
   }
-  bool operator()(const std::string &data) {
-    if (data.empty())
-      return false;
-    char *ptr = const_cast<char *>(pattern.c_str());
-    auto errcode = hs_scan(database, data.data(), data.size(), 0, scratch,
-                           event_handler, ptr);
-    if (errcode == HS_SUCCESS) {
-      return false;
-    } else if (errcode == HS_SCAN_TERMINATED) {
-      return true;
-    } else {
-      throw std::runtime_error("Unable to scan input buffer");
-    }
-  }
-private:
-  hs_database_t *database = NULL;
-  hs_scratch_t *scratch = NULL;
-  std::string pattern;
-};
-```
-
----
-class: center, middle
-# Benchmark results
-
----
-# fastgrep using regex
-
-``` text
-015249:commands hdang$ /usr/bin/time -lp ./fastgrep -p Starting1 ../data/workqueue-execution_current
-real         0.07
-user         0.03
-sys          0.03
-   4308992  maximum resident set size
-         0  average shared memory size
-         0  average unshared data size
-         0  average unshared stack size
-      1068  page reclaims
-         0  page faults
-         0  swaps
-         0  block input operations
-         0  block output operations
-         0  messages sent
-         0  messages received
-         0  signals received
-         2  voluntary context switches
-        34  involuntary context switches
-```
-
----
-class: center, middle
-# How to write an efficient timestamp parser
-
----
-# An typical solution using **strptime**
-
-``` c++
-// Basic implementation using strptime.
-void strftime(benchmark::State &state) {
-    struct tm tm;
-    for (auto _ : state) {
-        strptime(timestamp, "%m-%d-%Y %H:%M:%S", &tm);
-    }
 }
 ```
 
 ---
-# Our customized timestamp parser
+# fgrep vs grep vs ripgrep vs ag
+
 ``` c++
-struct _ts {
-    unsigned char tm_isdst;
-    unsigned char tm_sec;
-    unsigned char tm_min;
-    unsigned char tm_hour;
-    unsigned char tm_mday;
-    unsigned char tm_mon;
-    unsigned short tm_year;
-};
-
-union _tsdata {
-    detail::_ts ts;
-    int64_t value;
-};
-
-// A timestamp string will be in this format "MM/DD/YYYY hh::mm::ss"
-template <typename T> T parse_scribe_timestamp(const char *ptr) {
-    T tm;
-    tm.data.ts.tm_mon = parse_digits<2>(ptr, 0);
-    tm.data.ts.tm_mday = parse_digits<2>(ptr + 3, 0);
-    tm.data.ts.tm_year = parse_digits<4>(ptr + 6, 0);
-    tm.data.ts.tm_hour = parse_digits<2>(ptr + 11, 0);
-    tm.data.ts.tm_min = parse_digits<2>(ptr + 14, 0);
-    tm.data.ts.tm_sec = parse_digits<2>(ptr + 17, 0);
-    tm.data.ts.tm_isdst = 0; // We do not care about day light saving when parsing log data.
-    return tm;
-}
+hungptit@hungptit ~/w/f/benchmark> ./all_tests
+Celero
+Timer resolution: 0.001000 us
+-----------------------------------------------------------------------------------------------------------------------------------------------
+Group           |   Experiment    |   Prob. Space   |     Samples     |   Iterations    |    Baseline     |  us/Iteration   | Iterations/sec  |
+-----------------------------------------------------------------------------------------------------------------------------------------------
+mark_twain      | grep_brew       |            Null |               5 |               1 |         1.00000 |   1799550.00000 |            0.56 |
+mark_twain      | ag              |            Null |               5 |               1 |         1.23578 |   2223852.00000 |            0.45 |
+mark_twain      | ripgrep         |            Null |               5 |               1 |         0.64115 |   1153773.00000 |            0.87 |
+mark_twain      | fgrep           |            Null |               5 |               1 |         0.37734 |    679048.00000 |            1.47 |
+Complete.
 ```
 
 ---
-# Benchmark results
+# fgrep vs grep vs ripgrep vs ag
 
-``` text
-2018-04-15 16:15:32
-Running ./timeutils
-Run on (8 X 2200 MHz CPU s)
-CPU Caches:
-  L1 Data 32K (x4)
-  L1 Instruction 32K (x4)
-  L2 Unified 262K (x4)
-  L3 Unified 6291K (x1)
----------------------------------------------------
-Benchmark            Time           CPU Iterations
----------------------------------------------------
-strftime           114 ns        114 ns    6138251
-fast_parser          4 ns          4 ns  121000501
+``` c++
+
 ```
 
 ---
-# Summary
+# How to print out search results fast?
 
-* Our customized timestamp is a big win, it offers 50x speedup on Linux compared with **strptime** function. We can significantly speedup log search tasks if we know our begin and end time of log messages.
+* iostream
 
-* hyperscan is very easy to use and it makes fastgrep regex search as fast as that of grep and ripgrep.
+* fprintf
 
+* [fmt](https://github.com/fmtlib/fmt "fmt")
 
 ---
 class: center, middle
 # Demo
 
 ---
+# Useful tips
+
+* std::string::find is not efficient.
+
+* std::regex is very slow.
+
+* iostream is very slow for reading files.
+
+* boost::iostream is reasonable fast, however, it is still 50% slower then the low-level implementation.
+
+* We do need to minimize memory copy when writing high performance code.
+
+* The public interface does affect our code performance.
+
+---
 # Conclusions
 
-* fastgrep's raw performance is as good as the best grep like commands i.e GNU grep and [ripgrep][ripgrep]. However, it can filter our scribe log messages using timestamp.
+* fgrep's raw performance is comparable to that of [ripgrep](https://github.com/BurntSushi/ripgrep) and GNU grep. From our benchmark the_silver_searcher is slower than [grep](https://www.gnu.org/software/grep/) and [ripgrep](https://github.com/BurntSushi/ripgrep).
 
-* Generic programming paradigm is a big win. It helps to create reusable, flexible, and performant algorithms.
+* Generic programming paradigm is a big win. It helps to create reusable, flexible, and high performance algorithms.
 
-* The standard C++ functions for string handling are inefficient i.e std::find and std::ifstream.
-
-* Creating efficient solutions using modern C++ is not a trivial task. From our examples, we can easily see that a regular C++ code might be significantly slower than that of a similar code writtent in other compiled languages such as C, Rust, or may be Go.
+* Creating efficient solutions using modern C++ is not a trivial task. We have demonstrated that a clean C++ solution using iostream and std::regex can be 100x slower than GNU grep or ripgrep commands.
 
 ---
 
-
 # Todo list
 
-* Improve the usability of fastgrep command.
+* Improve the usability of fgrep.
 
-* Need a detail benchmark.
+* Improve the performance of fgrep.
+
+* Add more tests.
+
+---
+# Acknowledgment
+
+* SSE2/AVX2 code is the modified version of [sse4-strstr](https://github.com/WojciechMula/sse4-strstr "sse4-strstr")
+
+* My fast file reading algorithm ideas come from
+  * [Limere's blog post](https://lemire.me/blog/2012/06/26/which-is-fastest-read-fread-ifstream-or-mmap/ "Limere's blog")
+  * [GNU wc command](https://www.gnu.org/software/coreutils/manual/html_node/wc-invocation.html "wc")
+  * [grep](https://www.gnu.org/software/grep/ "GNU grep")
+  * [ripgrep](https://github.com/BurntSushi/ripgrep)
+
+---
+# Used libraries and tools
+* [Catch2](https://github.com/catchorg/Catch2 "Catch2")
+* [boost](https://www.boost.org/ "Boost libraries")
+* [STL](https://en.wikipedia.org/wiki/Standard_Template_Library)
+* [fmt](https://github.com/fmtlib/fmt "A modern formatting library")
+* [hyperscan](https://www.hyperscan.io/ "hyperscan")
+* [cereal](https://github.com/USCiLab/cereal "A C++11 library for serialization")
+* [benchmark](https://github.com/google/benchmark)
+* [Celero](https://github.com/DigitalInBlue/Celero)
+* [utils](https://github.com/hungptit/utils "utils")
+* [ioutils](https://github.com/hungptit/ioutils "A blazing fast file I/O library")
+* [CMake](https://cmake.org/ "CMake")
+* [gcc](https://gcc.gnu.org/)
+* [clang](https://clang.llvm.org/)
+* [perf](https://perf.wiki.kernel.org/index.php/Main_Page)
+* [strace](https://strace.io/ "strace")
+* [ripgrep](https://github.com/BurntSushi/ripgrep "ripgrep")
+* [GNU grep](https://www.gnu.org/software/grep/)
 
 ---
 class: center, middle
 # Q/A
-
----
-# Acknowledgement
-
-* SSE2/AVX2 code is the modified version of [sse4-strstr](https://github.com/WojciechMula/sse4-strstr "sse4-strstr")
-
-* References for my fast file reading algorithm are [lemire's blog post](https://lemire.me/blog/2012/06/26/which-is-fastest-read-fread-ifstream-or-mmap/ "Lemire's blog") and [GNU wc command](https://www.gnu.org/software/coreutils/manual/html_node/wc-invocation.html "wc").
-
-* Used Below are libraries and tools:
-  * [Catch2](https://github.com/catchorg/Catch2 "Catch2")
-  * [hyperscan](https://www.hyperscan.io/ "hyperscan")
-  * [utils](https://github.com/hungptit/utils "utils")
-  * [ioutils](https://github.com/hungptit/ioutils "A blazing fast file I/O library")
-  * [boost](https://www.boost.org/ "Boost libraries")
-  * [fmt](https://github.com/fmtlib/fmt "A modern formatting library")
-  * [cereal](https://github.com/USCiLab/cereal "A C++11 library for serialization")
-  * [CMake](https://cmake.org/ "CMake")
-  * [benchmark](https://github.com/google/benchmark)
-  * [Celero](https://github.com/DigitalInBlue/Celero)
-  * [gcc](https://gcc.gnu.org/)
-  * [clang](https://clang.llvm.org/)
-  * [perf](https://en.wikipedia.org/wiki/Perf_(Linux))
-
-[ripgrep]: https://github.com/BurntSushi/ripgrep "ripgrep"
