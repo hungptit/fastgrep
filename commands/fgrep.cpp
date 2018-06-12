@@ -34,9 +34,10 @@ int main(int argc, char *argv[]) {
     // using Reader22 = ioutils::FileReader<fastgrep::GrepPolicy<Matcher2_2>, BUFFER_SIZE>;
     using Reader23 = ioutils::FileReader<fastgrep::GrepPolicy<Matcher3_2>, BUFFER_SIZE>;
     using Reader24 = ioutils::FileReader<fastgrep::GrepPolicy<Matcher4_2>, BUFFER_SIZE>;
+    using Reader25 = ioutils::MMapReader<fastgrep::GrepPolicy<Matcher4_2>>;
 
     // Grep the content of given files.
-    Reader24 grep(argv[1]);
+    Reader25 grep(argv[1]);
     for (auto idx = 2; idx < argc; ++idx) { grep(argv[idx]); }
     return EXIT_SUCCESS;
 }

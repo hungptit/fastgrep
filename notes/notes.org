@@ -153,15 +153,16 @@
 *** Searching for patterns from Mark Twain book (16013977 bytes)
 *** Searching for patterns from a log file (676960393 bytes)
 ** Random notes
-    + Use memory map does not speed up file reading algorithm.
-    + grep and ripgrep has better I/O performance than fgrep for small files.
-    + fgrep outperform other commands for large log files.
-    + ag does not support files that larger than 2Gbytes.
+    + fgrep performance is comparable to that of grep and ripgrep.
+    + Use memory map does speed up file reading algorithm in latest Linux kernels.
+    + std::string::find is not fast by default.
+    + std::regex is very slow.
 ** Conclusion
+    + Performance profiling tools are your friends.
     + Care about your interface, it might affect the performance of your code.
     + Avoid memory copy if you want to write high performance code.
-    + std::string::find is not fast by default and string related
-      functionality written in C++ might be significantly slower
-      than a similar C code.
     + C++ allows us to write reusable and efficient code.
-    + Performance profiling tools are your friends.
+** Links
+   + [[https://beyondgrep.com/feature-comparison/][Feature comparisons]]
+   + [[https://blog.burntsushi.net/ripgrep/][ripgrep]]
+   +
