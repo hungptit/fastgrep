@@ -35,7 +35,7 @@ const std::vector<std::string> patterns = {
 namespace {
     void run_a_test(const std::string datafile, const std::string &command,
                     const std::string &pattern) {
-        std::string cmd = command + " '" + pattern + "' " + datafile + " > output.txt";
+        std::string cmd = command + " '" + pattern + "' " + datafile + " > output.log";
         system(cmd.c_str());
     }
     void run_all_tests(const std::string datafile, const std::string &command,
@@ -45,7 +45,7 @@ namespace {
 } // namespace
 
 BASELINE(mark_twain, grep_brew, number_of_samples, number_of_operations) {
-    run_all_tests(datafile, "ggrep -E", patterns);
+    run_all_tests(datafile, "grep -E", patterns);
 }
 
 BENCHMARK(mark_twain, ag, number_of_samples, number_of_operations) {
