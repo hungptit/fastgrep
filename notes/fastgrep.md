@@ -1,109 +1,121 @@
 class: center, middle
-# How to write a fast grep like command using modern C++
+# Fast plain text searching using modern C++
 
 ---
 
 # Why?
 
-Our distributed system logs more than one billions log messages a day and we occasionally need to dive into our log files to identify production issues.
+<!-- Insert a why picture here -->
 
 ---
 
 # Goals
 
-* Create an usable grep command that can be as fast as grep, ripgrep, and/or ag.
+* Build reusable and fast text processing libraries.
 
-* Have reusable and fast text processing libraries that can be used in other projects.
-
----
-
-# Requirements
-
-* Can find matched lines using user's specified patterns.
-
-* Can display matched line numbers.
-
-* Can work with any file.
+* Create an usable text searching command-line utility which is as fast as grep, ripgrep, and/or ag.
 
 ---
-
-# Functionality
-
-* A user friendly command line interface.
-
-* An efficient file reading algorithm.
-
-* Fast pattern matching algorithms.
+class: center, middle
+# Background
 
 ---
-# Setup
-
-* All code are compiled with **-O3 -march=native** flags.
-
-* Compiler: gcc-5.5 and clang-900.0.39.2
-
-* Test environments
-
-    * Linux:
-      + CPU: Intel(R) Xeon(R) CPU E5-2699 v4 @ 2.20GHz
-      + Memory: 773519 MBytes
-      + Storage: Very fast network storage.
-
-    * Mac OS:
-      + CPU: Intel(R) Core(TM) i7-4770HQ CPU @ 2.20GHz
-      + Memory: 16 GB
-      + Storage: SSD
-
----
-# Introduction to generic programming
-
-??? Need to get the picture of Alex book.
-
----
-# What is **Policy-based design** 
+# [Generic programming](http://www.fm2gp.com/ "From mathematics to Generic programming")
 
 ``` text
-Policy-based design, also known as policy-based class design or policy-based programming, is a computer programming paradigm based on an idiom for C++ known as policies. It has been described as a compile-time variant of the strategy pattern, and has connections with C++ template metaprogramming. It was first popularized by Andrei Alexandrescu with his 2001 book Modern C++ Design and his column Generic<Programming> in the C/C++ Users Journal.
+Generic programming is a style of computer programming in which
+algorithms are written in terms of types to-be-specified-later that
+are then instantiated when needed for specific types provided as
+parameters. This approach, pioneered by ML in 1973,[1][2] permits
+writing common functions or types that differ only in the set of types
+on which they operate when used, thus reducing duplication.
+
 ```
 
 ---
-# A sample application based on policy-based design
+# Policy based design
 
-``` C++
+``` text
+   Policy-based design, also known as policy-based class design or
+   policy-based programming, is a computer programming paradigm based
+   on an idiom for C++ known as policies. It has been described as a
+   compile-time variant of the strategy pattern, and has connections
+   with C++ template metaprogramming. It was first popularized by
+   Andrei Alexandrescu with his 2001 book Modern C++ Design and his
+   column Generic<Programming> in the C/C++ Users Journal.
+```
+
+---
+# [What is SIMD?](https://en.wikipedia.org/wiki/SIMD "SIMD")
+
+
+``` text
+Single instruction, multiple data (SIMD) is a class of parallel
+computers in Flynn's taxonomy. It describes computers with multiple
+processing elements that perform the same operation on multiple data
+points simultaneously. Such machines exploit data level parallelism,
+but not concurrency: there are simultaneous (parallel) computations,
+but only a single process (instruction) at a given moment. SIMD is
+particularly applicable to common tasks such as adjusting the contrast
+in a digital image or adjusting the volume of digital audio. Most
+modern CPU designs include SIMD instructions to improve the
+performance of multimedia use.
 
 ```
 
 ---
-# How to process command line interface in C++?
 
-``` c++
-    namespace po = boost::program_options;
-    po::options_description desc("Allowed options");
-    std::string begin_time, end_time;
-    scribe::MessageFilterParams params;
-    std::vector<std::string> args;
-    desc.add_options()
-        ("help,h", "Print this help")
-        ("verbose,v", "Display verbose information.")
-        ("info", "Display information messages.")
-        ("error", "Display error messages.")
-        ("no-regex", "Do not use regex engine for pattern matching.")
-        ("begin,b", po::value<std::string>(&begin_time), "Begin time in 'mm-dd-yyyy hh:mm:ss' format.")
-        ("end,e", po::value<std::string>(&end_time), "End time in 'mm-dd-yyyy hh:mm:ss' format")
-        ("arguments,a", po::value<std::vector<std::string>>(&args), "Search pattern and files")
-        ("output,o", po::value<std::string>(&params.outfile), "Output file");
-    po::positional_options_description p;
-    p.add("arguments", -1);
-    po::variables_map vm;
-    po::store(po::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
-    po::notify(vm);
-```
+# Benchmark tools
+
+* [Google benchmark](https://github.com/google/benchmark)
+
+* [Celero](https://github.com/DigitalInBlue/Celero)
+
+* [perf](https://perf.wiki.kernel.org/index.php/Main_Page)
 
 ---
+# Test environments
 
+* Linux:
+  + CPU: Xeon(R) E5-2699, Core i7 i920, Core i7 6th
+  + Memory: 773519 MBytes
+  + Storage: SSD and network storage
+  + Kernel: 3.8.13 and 4.17
+
+* Mac OS:
+  + CPU: Intel(R) Core(TM) i7-4770HQ CPU @ 2.20GHz
+  + Memory: 16 GB
+  + Storage: SSD
+
+* Compiler
+  + gcc-5.5 and gcc-7.3
+  + clang-900.0.39.2
+
+---
+# Test data
+
+* Test data and test patterns are discussed [here](https://rust-leipzig.github.io/regex/2017/03/28/comparison-of-regex-engines/)
+
+* Log data
+
+---
 class: center, middle
+<!-- Insert a how to picture here -->
 
-# How to write an efficient file reading algorithms
+---
+# The anatomy of a text-searching tool
+
+    * Gather files to search.
+
+    * Read text data from files
+
+    * Search for a pattern from the text data.
+
+    * Print out the search results
+
+---
+class: center, middle
+# What is the most efficient way to read data from a text file?
 
 ---
 
@@ -118,59 +130,69 @@ class: center, middle
                           if (item == EOL) ++lines;
                       });
         return lines;
-    }
+}
 ```
 
 ---
+# A memory mapped solution using Boost
 
-# A memory mapped solution
 
-``` c++
-    size_t memmap_linestats(const std::string &afile) {
-        boost::iostreams::mapped_file mmap(afile, boost::iostreams::mapped_file::readonly);
-        auto begin = mmap.const_data();
-        auto end = begin + mmap.size();
-        size_t lines;
-        std::for_each(begin, end, [&lines](auto const item) {
-            if (item == EOL) ++lines;
-        });
-        return lines;
-    }
-```
 ---
-
-# A low-level I/O solution
+# A memory mapped solution using low-level APIs
 
 ``` c++
-    struct LineStats {
-        explicit LineStats() : lines(0) {}
-        void operator()(const char *buffer, size_t len) {
-            for (size_t idx = 0; idx < len; ++idx) {
-                if (buffer[idx] == EOL) {
-                    ++lines;
-                }
-            }
-        }
-        size_t lines;
-    };
+    // Open data file for reading
+    int fd = open(datafile, O_RDONLY);
+    if (fd == -1) { handle_error("Cannot open "); }
 
-    // Core algorithm for reading a file
-    while (true) {
-        auto nbytes = ::read(fd, read_buffer, BUFFER_SIZE);
+    // Obtain file size
+    struct stat info;
+    if (fstat(fd, &info) == -1) { handle_error("Cannot get information of "); }
+    size_t length = info.st_size;
+
+    // Create mapped memory
+    const int flags = MAP_PRIVATE;
+    char *begin = static_cast<char *>(mmap(nullptr, length, PROT_READ, flags, fd, 0u));
+```
+
+---
+# Read data in blocks using low-level APIs
+
+``` c++ 
+    size_t block_count = (buf.st_size / BUFFER_SIZE) + (buf.st_size % BUFFER_SIZE != 0);
+    for (size_t blk = 0; blk < block_count; ++blk) {
+        long nbytes = ::read(fd, read_buffer, BUFFER_SIZE);
         if (nbytes < 0) {
-            std::stringstream writer;
-            writer << "Cannot read file \"" << datafile << "\"";
-            throw(std::runtime_error(writer.str()));
+            const std::string msg =
+                std::string("Cannot read from file \"") + std::string(datafile) + "\" ";
+            throw(std::runtime_error(msg));
         };
 
         // Apply a given policy to read_buffer.
-        policy(read_buffer, nbytes);
-
-        // Stop if we reach the end of file.
-        if (nbytes != static_cast<decltype(nbytes)>(BUFFER_SIZE)) { break; };
+        Policy::process(read_buffer, nbytes);
     }
 
 ```
+
+---
+# Benchmark results
+
+
+---
+class: center, middle
+# How to search a pattern from the text data fast?
+
+---
+class: center, middle
+# How to print out search results fast?
+
+---
+
+
+class: center, middle
+
+# How to write an efficient file reading algorithms
+
 ---
 # Benchmark results
 
