@@ -10,8 +10,6 @@ namespace fastgrep {
       public:
         GrepPolicy(const std::string &patt) : matcher(patt) {}
 
-        ~GrepPolicy() { process_linebuf(); }
-
         void process(const char *begin, const size_t len) {
             const char *start = begin;
             const char *end = begin + len;
@@ -34,7 +32,10 @@ namespace fastgrep {
             }
 
             // Update the line buffer with leftover data.
-            if (start != end) { linebuf.append(start, end - start); }
+            if (start != end) {
+                linebuf.append(start, end - start);
+                process_line(linebuf.data(), linebuf.size());
+            }
             pos += len;
         }
 
@@ -57,7 +58,6 @@ namespace fastgrep {
         template <typename Matcher> class GrepPolicy {
           public:
             GrepPolicy(const std::string &patt) : matcher(patt) {}
-            ~GrepPolicy() { process_linebuf(); }
 
             void process(const char *begin, const size_t len) {
                 const char *start = begin;
@@ -77,7 +77,10 @@ namespace fastgrep {
                 }
 
                 // Update the line buffer with leftover data.
-                if (start != end) { linebuf.append(start, end - start); }
+                if (start != end) {
+                    linebuf.append(start, end - start);
+                    process_linebuf();
+                }
                 pos += len;
             }
 
