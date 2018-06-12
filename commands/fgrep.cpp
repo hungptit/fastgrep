@@ -17,7 +17,7 @@ int main(int argc, char *argv[]) {
     using Matcher2 = utils::avx2::Contains;
     using Matcher3 = utils::hyperscan::RegexMatcher;
 
-    using Reader = ioutils::FileReader<fastgrep::GrepPolicy<Matcher2>, 1 << 17>;
+    using Reader = ioutils::FileReader<fastgrep::GrepPolicy<Matcher3>, 1 << 17>;
     Reader grep(argv[1]);
     for (auto idx = 2; idx < argc; ++idx) { grep(argv[idx]); }
     return EXIT_SUCCESS;

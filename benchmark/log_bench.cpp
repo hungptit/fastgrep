@@ -1,5 +1,4 @@
 #include "celero/Celero.h"
-
 #include "fmt/format.h"
 #include "grep.hpp"
 #include "ioutils/ioutils.hpp"
@@ -21,7 +20,7 @@ const std::vector<std::string> log_patterns = {
 namespace {
     void run_a_test(const std::string datafile, const std::string &command,
                     const std::string &pattern) {
-        std::string cmd = command + " '" + pattern + "' " + datafile + " | wc > /dev/null";
+        std::string cmd = command + " '" + pattern + "' " + datafile + " > output.txt";
         system(cmd.c_str());
     }
     void run_all_tests(const std::string datafile, const std::string &command,

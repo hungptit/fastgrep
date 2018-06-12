@@ -1,5 +1,9 @@
 class: center, middle
+<<<<<<< HEAD
 # How to write a fast grep like command using modern C++
+=======
+# How to write a very fast grep like command
+>>>>>>> d9b8297ca254ba7c69eea7fe69368a61a62e4d04
 
 ---
 
