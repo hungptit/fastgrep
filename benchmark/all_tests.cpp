@@ -60,6 +60,6 @@ BENCHMARK(mark_twain, fgrep, number_of_samples, number_of_operations) {
     run_all_tests(datafile, "../commands/fgrep", patterns);
 }
 
-BENCHMARK(mark_twain, fastgrep, number_of_samples, number_of_operations) {
-    run_all_tests(datafile, "../commands/fastgrep", patterns);
-}
+// BENCHMARK(mark_twain, fastgrep, number_of_samples, number_of_operations) {
+//     run_all_tests(datafile, "../commands/fastgrep", patterns);
+// }

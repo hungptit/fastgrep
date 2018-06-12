@@ -48,6 +48,6 @@ BENCHMARK(logdata, fgrep, log_search_samples, number_of_operations) {
     run_all_tests(logfile, "../commands/fgrep", log_patterns);
 }
 
-BENCHMARK(logdata, fastgrep, log_search_samples, number_of_operations) {
-    run_all_tests(logfile, "../commands/fastgrep", log_patterns);
-}
+// BENCHMARK(logdata, fastgrep, log_search_samples, number_of_operations) {
+//     run_all_tests(logfile, "../commands/fastgrep", log_patterns);
+// }
