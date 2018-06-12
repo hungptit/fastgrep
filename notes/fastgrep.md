@@ -2,10 +2,7 @@ class: center, middle
 # How to write a fast plain text searching tool using modern C++
 
 ---
-
-# Why?
-
-<!-- Insert a why picture here -->
+background-image: url(https://www.allearsenglish.com/wp-content/uploads/2014/02/why-you-cant-speak-English.jpg)
 
 ---
 
@@ -101,8 +98,7 @@ performance of multimedia use.
 * Log data
 
 ---
-class: center, middle
-<!-- Insert a how to picture here -->
+background-image: url(https://blog.softheme.com/wp-content/uploads/2015/01/start_coding.jpg)
 
 ---
 # The anatomy of a text-searching tool
@@ -361,7 +357,7 @@ struct ExactMatch {
 ---
 # fgrep vs grep
 
-``` text
+``` c++
  Performance counter stats for './fgrep "LEVEL":"error" /mnt/weblogs/scribe/workqueue-execution/workqueue-execution-2018-06-12_00000' (3 runs):
 
       12247.710568 task-clock                #    0.999 CPUs utilized            ( +-  1.25% )
@@ -381,7 +377,7 @@ struct ExactMatch {
 ---
 # fgrep vs grep (cont)
 
-``` text
+``` c++
 hdang@dev115 ~/w/f/commands> /usr/sbin/perf stat -r 3 grep '"LEVEL":"error"' /mnt/weblogs/scribe/workqueue-execution/workqueue-execution-2018-06-12_00000 | wc
 
  Performance counter stats for 'grep "LEVEL":"error" /mnt/weblogs/scribe/workqueue-execution/workqueue-execution-2018-06-12_00000' (3 runs):
@@ -485,7 +481,7 @@ avx2_string_find         14 ns         14 ns   49368340
 ---
 # SSE2-fgrep benchmark results
 
-``` text
+``` c++
  Performance counter stats for 'grep "LEVEL":"error" /mnt/weblogs/scribe/workqueue-execution/workqueue-execution-2018-06-12_00000' (3 runs):
 
        3995.421584 task-clock                #    0.998 CPUs utilized            ( +-  1.13% )
@@ -501,11 +497,10 @@ avx2_string_find         14 ns         14 ns   49368340
 
        4.001814923 seconds time elapsed                                          ( +-  1.14% )
 ```
-
 ---
 # AVX2-fgrep benchmark results
 
-``` text
+``` c++
 hdang@dev115 ~/w/f/commands> /usr/sbin/perf stat -r 3 ./fgrep '"LEVEL":"error"' /mnt/weblogs/scribe/workqueue-execution/workqueue-execution-2018-06-12_00000 | wc
 
  Performance counter stats for './fgrep "LEVEL":"error" /mnt/weblogs/scribe/workqueue-execution/workqueue-execution-2018-06-12_00000' (3 runs):
@@ -530,6 +525,8 @@ hdang@dev115 ~/w/f/commands> /usr/sbin/perf stat -r 3 ./fgrep '"LEVEL":"error"' 
 * std::string::find is not optimized.
 
 * We do need std::string_view feature to support in-place parsing.
+
+* SSE2 and AVX2 version of strstr does significantly speedup the exact matching algorithms.
 
 ---
 background-image: url(pictures/Are+we+done+yet.png)
