@@ -20,7 +20,11 @@ const std::vector<std::string> log_patterns = {
 namespace {
     void run_a_test(const std::string datafile, const std::string &command,
                     const std::string &pattern) {
+<<<<<<< HEAD
         std::string cmd = command + " '" + pattern + "' " + datafile + " > output.txt";
+=======
+        std::string cmd = command + " '" + pattern + "' " + datafile + " > output.log";
+>>>>>>> 26a4bff38592c4ab4563349ed65720b259745d8d
         system(cmd.c_str());
     }
     void run_all_tests(const std::string datafile, const std::string &command,
@@ -32,21 +36,21 @@ namespace {
 // Benchmark log search
 constexpr int log_search_samples = 3;
 BASELINE(logdata, grep_brew, log_search_samples, number_of_operations) {
-    run_all_tests(logfile, "grep -E", log_patterns);
+    run_all_tests(logfile, "ggrep -E", log_patterns);
 }
 
 BENCHMARK(logdata, ag, log_search_samples, number_of_operations) {
     run_all_tests(logfile, "ag", log_patterns);
 }
 
-// BENCHMARK(logdata, ripgrep, log_search_samples, number_of_operations) {
-//     run_all_tests(logfile, "rg", log_patterns);
-// }
+BENCHMARK(logdata, ripgrep, log_search_samples, number_of_operations) {
+    run_all_tests(logfile, "rg", log_patterns);
+}
 
 BENCHMARK(logdata, fgrep, log_search_samples, number_of_operations) {
     run_all_tests(logfile, "../commands/fgrep", log_patterns);
 }
 
-BENCHMARK(logdata, fastgrep, log_search_samples, number_of_operations) {
-    run_all_tests(logfile, "../commands/fastgrep", log_patterns);
-}
+// BENCHMARK(logdata, fastgrep, log_search_samples, number_of_operations) {
+//     run_all_tests(logfile, "../commands/fastgrep", log_patterns);
+// }

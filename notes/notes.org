@@ -4,32 +4,164 @@
   This talk will start with writing a simple line counting program and
   make our program more complicated by each step using policy based
   design approach. At the end of this talk we will be able to create a
-  very fast grep like command i.e it is faster than grep or
+  very fast grep like command i.e it is as fast as grep or
   ripgrep. As much as of this talk will focus on how to write reusable
   and high performance algorithms and some specific algorithms
   designing that makes core algorithms have greater performance than
   naive approaches.
-
+* About me
+  - Interest: C++, Linux, NoSQL, SQL, Distributed system, AI, and Machine learning.
+  - Work as a backend engineer at AthenaHealth. Our scrum team builds
+    and maintains a large distributed job execution system which
+    processes 200 millions job requests per day.
+  - Worked at MathWorks in Similink Core team.
+  - Got a PhD in computational electromanetics.
 * Outline:
-** Requirements
-   + Reusable.
-   + Performance
-   + Usability
-** What is SIMD?
+  - Goals
+  - Background
+  - Steps
+  - Summary
+* Goals
+  + Build a reusable and very fast file I/O library in Linux/Unix environments.
+  + Create a fast grep like command for my daily usage.
+    - We will create one that fit for our need.
+    - Build a foundation for my very fast code search and log search engine.
+* Background
+** Why?
+   + Sometime we do need to search for a pattern from text files.
+** [[https://en.wikipedia.org/wiki/SSE2][What is SSE2?]]
+** [[https://en.wikipedia.org/wiki/Advanced_Vector_Extensions][What is AVX2?]]
 ** What is Policy based design
-** Steps
-*** How to read a file fast?
-*** A simple line counting command
-*** Performance analysis
-*** What is our bottle neck?
-*** wc hidden secrete.
-*** A simple exact text matching command
-*** What is the bottle neck?
-*** How can we fix it?
-*** Are we done?
-*** What is regex?
-*** A basic grep like command.
-*** More usable command line interface.
-*** Conclusion
-    + std::string is not fast by default and string related functionality written in + C++ might be significantly slower than a similar C code.
-    + Performance profiling tools are your friends if you want to write fast C++ code.
+   Policy-based design, also known as policy-based class design or
+   policy-based programming, is a computer programming paradigm based
+   on an idiom for C++ known as policies. It has been described as a
+   compile-time variant of the strategy pattern, and has connections
+   with C++ template metaprogramming. It was first popularized by
+   Andrei Alexandrescu with his 2001 book Modern C++ Design and his
+   column Generic<Programming> in the C/C++ Users Journal.
+* Experimental setup
+** Test machines
+   + Core i7 desktop/laptop with Linux kernel 4.17.
+     - CPU:
+     - Memmory: 16 GBytes
+     - Kernel: Linux 4.17
+     - Filesystem: ext4
+   + Dell server
+     - CPU: Intel(R) Xeon(R) CPU E5-2699 v4 @ 2.20GHz
+     - Memory: 773519 MBytes
+     - Kernel: 3.8.13-118.20.2.el6uek.x86_64
+     - Filesystem: Very fast network drive.
+   + MacBook Pro
+     - CPU: 2.2 GHz Intel Core i7
+     - Memory: 16GBytes
+     - Filesystem: APFS
+** Compiler
+   + gcc 7.3
+   + gcc 5.5
+** Used tools and libraries
+   + perf
+   + strace
+   + benchmark
+   + Celero
+   + hyperscan
+   + boost
+   + Catch2
+   + fmt
+   + cereal
+   + CMake
+** Test data
+   + Test data and patterns are obtained from [[https://rust-leipzig.github.io/regex/2017/03/28/comparison-of-regex-engines/][comparison of regex engines]].
+** Limitations
+   + We do not support Unicode strings.
+   + We do not support Windows.
+   + Require a decent C++ compiler.
+** The anatomy of a grep command
+   + Gather files to search.
+   + Read text data from files
+   + Search for a pattern from the text data.
+   + Print out the search results
+* What is the fastest way to print out a lot of text in C++
+  + std::cout
+  + printf
+  + fmt::print
+* How to read text data from files?
+** How to read a file fast?
+   + Show 3 ways of reading data from a file.
+     - iostream
+     - boost::memmap
+     - Read by chunk (refer to wc command, limere blog, and a stackoverflow post of sehe)
+** Performance benchmark
+   + Compare the performance of simple line counting program.
+** What is memchr?
+   + Why? Is optimized using SSE2.
+** memchr vs for loop
+   + Show the performance comparison between a simple for loop and memchr command.
+** An improved linecouting algorithms using memchr.
+   + Compare the performance between different line counting program.
+     + Use perf to show the bottle neck.
+     + Compare the performance with wc command.
+   + Show the performance benchmark.
+** An improved linecounting algorithms using memchr_avx2.
+   + Show that we can speed up our line couting command using avx2.
+** Summary file reading algorithm
+   + Read in chunk does speedup the read performance.
+   + C style interface allow us to do more i.e supporting SIMD and make use of excellent C functions such as memchr.
+   + Zero copy gurantee.
+* How search for a pattern from our text data?
+** Parse line-by-line
+** Use std::string::find algorithm
+** fgrep vs grep for exact text matching
+** Why it is so slow?
+   + Need a picture of why thing is slow
+** Use SSE2 version of string find algorithm
+** Use AVX2 version of string find algorithm
+** Can we do better with our parsing policy?
+   + Show the output of perf command for a large log file.
+** Avoid memory copy if you want to write high performance code!
+   + Show the output of perf stat command for an improved algorithm.
+** Final algorithm.
+** Benchmark results
+** Are we done?
+   + Our command only supports exact text matching and we do need to support regex pattern.
+*** What is regular expression?
+    + A regular expression, regex or regexp(sometimes called a
+      rational expression) is, in theoretical computer science
+      and formal language theory, a sequence of characters that define
+      a search pattern. Usually this pattern is then used by string
+      searching algorithms for "find" or "find and replace" operations
+      on strings, or for input validation.
+    + [Regular Expression Matching Can Be Simple And Fast](https://swtch.com/~rsc/regexp/regexp1.html)
+*** std::regex?
+    + Have a simple policy that use std::regex
+*** fgrep vs grep benchmark
+*** Why fgrep is slow?
+    + Show the output of perf command.
+*** Performance comparison of C/C+ regular expression engines.
+    + [[https://rust-leipzig.github.io/regex/2017/03/28/comparison-of-regex-engines/][Comparison of regex engines]].
+    + Why don't we use std::regex?
+*** hyperscan
+    + Fast and optimized using SIMD.
+    + Very user friendly interface.
+** How do we use hyperscan?
+*** A regex matching policy
+** Our basic grep like command.
+   + Support regex
+   + support exact matching.
+   + Can only grep files.
+** Performance analysis
+*** Searching for patterns from Mark Twain book (16013977 bytes)
+*** Searching for patterns from a log file (676960393 bytes)
+** Random notes
+    + fgrep performance is comparable to that of grep and ripgrep.
+    + Use memory map does speed up file reading algorithm in latest Linux kernels.
+    + std::string::find is not fast by default.
+    + std::regex is very slow.
+** Conclusion
+    + Performance profiling tools are your friends.
+    + Care about your interface, it might affect the performance of your code.
+    + Avoid memory copy if you want to write high performance code.
+    + C++ allows us to write reusable and efficient code.
+** Links
+   + [[https://beyondgrep.com/feature-comparison/][Feature comparisons]]
+   + [[https://blog.burntsushi.net/ripgrep/][ripgrep]]
+   +

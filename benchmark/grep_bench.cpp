@@ -17,13 +17,13 @@ const std::string pattern1 = "Twain";
 const std::string pattern2 = "(?i)Twain";
 const std::string pattern3 = "[a-z]shing";
 const std::string pattern4 = "Huck[a-zA-Z]+|Saw[a-zA-Z]+";
-const std::string pattern5 = "\b\w+nn\b";
+const std::string pattern5 = "\b\\w+nn\b";
 const std::string pattern6 = "[a-q][^u-z]{13}x";
 const std::string pattern7 = "Tom|Sawyer|Huckleberry|Finn";
 
 namespace {
     void exec(const std::string &command, const std::string &pattern) {
-        std::string cmd = command + " '" + pattern + "' " + datafile + " > /dev/null";
+        std::string cmd = command + " '" + pattern + "' " + datafile + " > output.log";
         system(cmd.c_str());
     }
 } // namespace
@@ -40,13 +40,13 @@ BENCHMARK(pattern1, fgrep, number_of_samples, number_of_operations) {
     exec("../commands/fgrep", pattern1);
 }
 
-BENCHMARK(pattern1, fastgrep_exact_match, number_of_samples, number_of_operations) {
-    exec("../commands/fastgrep --no-regex", pattern1);
-}
+// BENCHMARK(pattern1, fastgrep_exact_match, number_of_samples, number_of_operations) {
+//     exec("../commands/fastgrep --no-regex", pattern1);
+// }
 
-BENCHMARK(pattern1, fastgrep, number_of_samples, number_of_operations) {
-    exec("../commands/fastgrep", pattern1);
-}
+// BENCHMARK(pattern1, fastgrep, number_of_samples, number_of_operations) {
+//     exec("../commands/fastgrep", pattern1);
+// }
 
 // pattern2
 BASELINE(pattern2, gnu_grep, number_of_samples, number_of_operations) {
@@ -61,9 +61,9 @@ BENCHMARK(pattern2, fgrep, number_of_samples, number_of_operations) {
     exec("../commands/fgrep", pattern2);
 }
 
-BENCHMARK(pattern2, fastgrep, number_of_samples, number_of_operations) {
-    exec("../commands/fastgrep", pattern2);
-}
+// BENCHMARK(pattern2, fastgrep, number_of_samples, number_of_operations) {
+//     exec("../commands/fastgrep", pattern2);
+// }
 
 // pattern3
 BASELINE(pattern3, gnu_grep, number_of_samples, number_of_operations) {
@@ -78,9 +78,9 @@ BENCHMARK(pattern3, fgrep, number_of_samples, number_of_operations) {
     exec("../commands/fgrep", pattern3);
 }
 
-BENCHMARK(pattern3, fastgrep, number_of_samples, number_of_operations) {
-    exec("../commands/fastgrep", pattern3);
-}
+// BENCHMARK(pattern3, fastgrep, number_of_samples, number_of_operations) {
+//     exec("../commands/fastgrep", pattern3);
+// }
 
 // pattern4
 BASELINE(pattern4, grep, number_of_samples, number_of_operations) {
@@ -95,9 +95,9 @@ BENCHMARK(pattern4, fgrep, number_of_samples, number_of_operations) {
     exec("../commands/fgrep", pattern4);
 }
 
-BENCHMARK(pattern4, fastgrep, number_of_samples, number_of_operations) {
-    exec("../commands/fastgrep", pattern4);
-}
+// BENCHMARK(pattern4, fastgrep, number_of_samples, number_of_operations) {
+//     exec("../commands/fastgrep", pattern4);
+// }
 
 // pattern5
 BASELINE(pattern5, grep, number_of_samples, number_of_operations) {
@@ -112,9 +112,9 @@ BENCHMARK(pattern5, fgrep, number_of_samples, number_of_operations) {
     exec("../commands/fgrep", pattern5);
 }
 
-BENCHMARK(pattern5, fastgrep, number_of_samples, number_of_operations) {
-    exec("../commands/fastgrep", pattern5);
-}
+// BENCHMARK(pattern5, fastgrep, number_of_samples, number_of_operations) {
+//     exec("../commands/fastgrep", pattern5);
+// }
 
 // pattern6
 BASELINE(pattern6, grep, number_of_samples, number_of_operations) {
@@ -129,9 +129,9 @@ BENCHMARK(pattern6, fgrep, number_of_samples, number_of_operations) {
     exec("../commands/fgrep", pattern6);
 }
 
-BENCHMARK(pattern6, fastgrep, number_of_samples, number_of_operations) {
-    exec("../commands/fastgrep", pattern6);
-}
+// BENCHMARK(pattern6, fastgrep, number_of_samples, number_of_operations) {
+//     exec("../commands/fastgrep", pattern6);
+// }
 
 // pattern7
 BASELINE(pattern7, grep, number_of_samples, number_of_operations) {
@@ -146,7 +146,7 @@ BENCHMARK(pattern7, fgrep, number_of_samples, number_of_operations) {
     exec("../commands/fgrep", pattern7);
 }
 
-BENCHMARK(pattern7, fastgrep, number_of_samples, number_of_operations) {
-    exec("../commands/fastgrep", pattern7);
-}
+// BENCHMARK(pattern7, fastgrep, number_of_samples, number_of_operations) {
+//     exec("../commands/fastgrep", pattern7);
+// }
 

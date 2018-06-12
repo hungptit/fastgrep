@@ -8,6 +8,6 @@
 ** Overview
    + Why do we need perf command?
    + What is the benefit of SIMD?
-   + 
+	 + 
    
 
