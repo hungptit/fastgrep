@@ -48,6 +48,10 @@ BASELINE(mark_twain, grep_brew, number_of_samples, number_of_operations) {
     run_all_tests(datafile, "grep -E", patterns);
 }
 
+BENCHMARK(mark_twain, fgrep_warm_up, number_of_samples, number_of_operations) {
+    run_all_tests(datafile, "../commands/fgrep", patterns);
+}
+
 BENCHMARK(mark_twain, ag, number_of_samples, number_of_operations) {
     run_all_tests(datafile, "ag", patterns);
 }
