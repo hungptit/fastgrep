@@ -38,9 +38,9 @@ add_cxx_compiler_flag(-march=native)
 
 add_cxx_compiler_flag(-std=c++14)
 add_cxx_compiler_flag(-Wall)
-add_cxx_compiler_flag(-flto)
-add_cxx_compiler_flag(-fprofile-generate)
-add_cxx_compiler_flag(-fprofile-use)
+# add_cxx_compiler_flag(-flto)
+# add_cxx_compiler_flag(-fprofile-generate)
+# add_cxx_compiler_flag(-fprofile-use)
 
 # add_cxx_compiler_flag(-Wextra)
 # add_cxx_compiler_flag(-Wshadow)
