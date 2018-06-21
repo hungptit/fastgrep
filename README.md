@@ -41,4 +41,3 @@ mark_twain      | ripgrep         |               0 |               5 |         
 mark_twain      | fgrep           |               0 |               5 |               1 |         0.39076 |    398173.00000 |            2.51 |
 Complete.
 ```
-##  ##
