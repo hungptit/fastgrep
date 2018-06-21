@@ -4,6 +4,8 @@
 #include <cstring>
 #include <string>
 
+#include "utils/memchr.hpp"
+
 namespace fastgrep {
     static constexpr char EOL = '\n';
     template <typename Matcher> class GrepPolicy {
@@ -14,7 +16,7 @@ namespace fastgrep {
             const char *start = begin;
             const char *end = begin + len;
             const char *ptr = begin;
-            while ((ptr = static_cast<const char *>(memchr(ptr, EOL, end - ptr)))) {
+            while ((ptr = static_cast<const char *>(memchr_avx2(ptr, EOL, end - ptr)))) {
                 if (linebuf.empty()) {
                     process_line(start, ptr - start + 1);
                 } else {
