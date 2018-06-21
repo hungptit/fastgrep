@@ -35,8 +35,12 @@ BASELINE(logdata, grep_brew, log_search_samples, number_of_operations) {
     run_all_tests(logfile, "ggrep -E", log_patterns);
 }
 
-BENCHMARK(logdata, fgrep_first, log_search_samples, number_of_operations) {
-    run_all_tests(logfile, "../commands/fgrep", log_patterns);
+BENCHMARK(logdata, fgrep_mmap, log_search_samples, number_of_operations) {
+    run_all_tests(logfile, "../commands/fgrep --use-mmap=true", log_patterns);
+}
+
+BENCHMARK(logdata, fgrep_read, log_search_samples, number_of_operations) {
+    run_all_tests(logfile, "../commands/fgrep --use-mmap=false", log_patterns);
 }
 
 BENCHMARK(logdata, ag, log_search_samples, number_of_operations) {
@@ -45,6 +49,10 @@ BENCHMARK(logdata, ag, log_search_samples, number_of_operations) {
 
 BENCHMARK(logdata, ripgrep, log_search_samples, number_of_operations) {
     run_all_tests(logfile, "rg", log_patterns);
+}
+
+BENCHMARK(logdata, ripgrep_nommap, log_search_samples, number_of_operations) {
+    run_all_tests(logfile, "rg --no-mmap", log_patterns);
 }
 
 BENCHMARK(logdata, fgrep_second, log_search_samples, number_of_operations) {

@@ -56,6 +56,45 @@ namespace fastgrep {
         void process_linebuf() { process_line(linebuf.data(), linebuf.size()); }
     };
 
+    // This policy assumes that lines are all inside the given buffer.
+    template <typename Matcher> class SimpleGrepPolicy {
+      public:
+        SimpleGrepPolicy(const std::string &patt) : matcher(patt) {}
+
+        void process(const char *begin, const size_t len) {
+            const char *start = begin;
+            const char *end = begin + len;
+            const char *ptr = begin;
+            while ((ptr = static_cast<const char *>(memchr(ptr, EOL, end - ptr)))) {
+                process_line(start, ptr - start + 1);
+
+                // Update parameters
+                start = ++ptr;
+                ++lines;
+
+                // Stop if we reach the end of the buffer.
+                if (start == end) break;
+            }
+
+            // Update the line buffer with leftover data.
+            if (start != end) {
+                process_line(start, end - start);
+            }
+            pos += len;
+        }
+
+        Matcher matcher;
+        size_t lines = 1;
+        size_t pos = 0;
+
+      protected:
+        void process_line(const char *begin, const size_t len) {
+            if (matcher.is_matched(begin, len)) {
+                fmt::print("{0}:{1}", lines, std::string(begin, len));
+            }
+        }
+    };
+    
     namespace experiments {
         template <typename Matcher> class GrepPolicy {
           public:
