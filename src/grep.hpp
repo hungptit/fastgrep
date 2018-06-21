@@ -42,7 +42,7 @@ namespace fastgrep {
         }
 
         Matcher matcher;
-        size_t lines = 0;
+        size_t lines = 1;
         size_t pos = 0;
         std::string linebuf;
 

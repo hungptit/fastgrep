@@ -84,9 +84,13 @@ include_directories ("${EXTERNAL_DIR}/include")
 include_directories ("${ROOT_DIR}/src")
 
 # Build all
-set(COMMAND_SRC_FILES parser experiments test_read scribe)
+# Hyperscan
+SET(LIB_HS "${EXTERNAL_DIR}/lib/libhs.a")
+SET(LIB_HS_RUNTIME "${EXTERNAL_DIR}/lib/libhs_runtime.a")
+
+set(COMMAND_SRC_FILES parser)
 foreach (src_file ${COMMAND_SRC_FILES})
   ADD_EXECUTABLE(${src_file} ${src_file}.cpp)
-  TARGET_LINK_LIBRARIES(${src_file})
+  TARGET_LINK_LIBRARIES(${src_file} ${LIB_HS})
   ADD_TEST(${src_file} ./${src_file})
 endforeach (src_file)

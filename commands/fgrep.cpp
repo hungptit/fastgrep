@@ -60,7 +60,7 @@ namespace {
         desc.add_options()
             ("help,h", "Print this help")
             ("verbose,v", "Display verbose information.")
-            ("pattern, p", po::value<std::string>(&params.pattern), "Search pattern")
+            ("pattern,p", po::value<std::string>(&params.pattern), "Search pattern")
             ("files,f", po::value<std::vector<std::string>>(&paths), "A list of files and folders")
             ("output-file,o", po::value<std::string>(&params.output_file), "Output file")
             ("ignore-case", po::value<bool>(&params.parameters.ignore_case)->default_value(false), "Ignore case.")
@@ -77,7 +77,16 @@ namespace {
         po::store(po::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
         po::notify(vm);
 
-        // Preprocess input arguments
+        // Pre-process input arguments
+        if (vm.count("help")) {
+            std::cout << desc << "\n";
+            std::cout << "Examples:" << "\n";
+            std::cout << "    fgrep Fooo boo.txt" << "\n";
+            std::cout << "    fgrep -p Fooo boo.txt" << "\n";
+
+            exit(EXIT_SUCCESS);
+        }
+
         if (paths.empty()) {
             throw(std::runtime_error("Must provide pattern and file paths."));
         }
