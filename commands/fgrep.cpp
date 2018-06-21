@@ -60,7 +60,6 @@ namespace {
         desc.add_options()
             ("help,h", "Print this help")
             ("verbose,v", "Display verbose information.")
-            ("exact-match", "Do not use regex engine for pattern matching.")
             ("pattern, p", po::value<std::string>(&params.pattern), "Search pattern")
             ("files,f", po::value<std::vector<std::string>>(&paths), "A list of files and folders")
             ("output-file,o", po::value<std::string>(&params.output_file), "Output file")
@@ -111,38 +110,38 @@ namespace {
     }
 } // namespace
 
+template <typename T>
+void fgrep(const InputParams &params) {
+    T grep(params.pattern.data());
+    for (auto afile : params.files) { grep(afile.data()); }
+}
+
 int main(int argc, char *argv[]) {
+    constexpr int BUFFER_SIZE = 1 << 17;
     auto params = parse_input_arguments(argc, argv);
 
-    constexpr int BUFFER_SIZE = 1 << 17;
-    // Matchers
-    using Matcher1_1 = utils::experiments::ExactMatch;
-    using Matcher2_1 = utils::experiments::ExactMatchSSE2;
-    using Matcher3_1 = utils::experiments::ExactMatchAVX2;
+    // Search for given pattern based on input parameters
+    if (params.parameters.exact_match) {
+        // using Matcher = utils::ExactMatchSSE2;
+        using Matcher = utils::ExactMatchAVX2;
+        if (params.parameters.use_memmap) {
+            using Reader = ioutils::MMapReader<fastgrep::GrepPolicy<Matcher>>;
+            fgrep<Reader>(params);
+        } else {
+            using Reader = ioutils::FileReader<fastgrep::GrepPolicy<Matcher>, BUFFER_SIZE>;
+            fgrep<Reader>(params);
+        }
+    } else {
+        using Matcher = utils::hyperscan::RegexMatcher;
+        if (params.parameters.use_memmap) {
+            using Reader = ioutils::MMapReader<fastgrep::GrepPolicy<Matcher>>;
+            fgrep<Reader>(params);
+        } else {
+            using Reader = ioutils::FileReader<fastgrep::GrepPolicy<Matcher>, BUFFER_SIZE>;
+            fgrep<Reader>(params);
+        }
 
-    using Matcher1_2 = utils::ExactMatchSSE2;
-    using Matcher2_2 = utils::ExactMatchAVX2;
-    using Matcher3_2 = utils::experiments::RegexMatcher;
-    using Matcher4_2 = utils::hyperscan::RegexMatcher;
-
-    // Simple parser
-    using Reader11 =
-        ioutils::FileReader<fastgrep::experiments::GrepPolicy<Matcher1_1>, BUFFER_SIZE>;
-    using Reader12 =
-        ioutils::FileReader<fastgrep::experiments::GrepPolicy<Matcher2_1>, BUFFER_SIZE>;
-    using Reader13 =
-        ioutils::FileReader<fastgrep::experiments::GrepPolicy<Matcher3_1>, BUFFER_SIZE>;
-
-    // Improve parser
-    using Reader21 = ioutils::FileReader<fastgrep::GrepPolicy<Matcher1_2>, BUFFER_SIZE>;
-    // using Reader22 = ioutils::FileReader<fastgrep::GrepPolicy<Matcher2_2>, BUFFER_SIZE>;
-    using Reader23 = ioutils::FileReader<fastgrep::GrepPolicy<Matcher3_2>, BUFFER_SIZE>;
-    using Reader24 = ioutils::FileReader<fastgrep::GrepPolicy<Matcher4_2>, BUFFER_SIZE>;
-    using Reader25 = ioutils::MMapReader<fastgrep::GrepPolicy<Matcher4_2>>;
-
-    // Grep the content of given files.
-    Reader13 grep(params.pattern.data());
-    for (auto afile : params.files) { grep(afile.data()); }
+    }
 
     return EXIT_SUCCESS;
 }
