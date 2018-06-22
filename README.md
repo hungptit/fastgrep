@@ -3,7 +3,7 @@ The fgrep utility is searches any given input files for lines that match one or 
 
 # What is the different between fgrep and grep or ripgrep #
 
-fgrep is written as a library thus fgrep core code can be reused in other projects. All core algorithms are templatized so we can have flexible and reusable algorithms without sacrificing the performance. Plus it is very faily trivial to write tests for fgrep.
+fgrep is written as a library thus fgrep core code can be reused in other projects. All core algorithms are templatized so we can have flexible and reusable algorithms without sacrificing the performance. 
 
 # Why fgrep is fast? #
 
