@@ -45,7 +45,7 @@ Test data and patterns are obtained from this [article](https://rust-leipzig.git
 * The output of all commands are redirected to a temporary file.
 
 ## Results ##
-``` shell
+```
 hungptit@hunghien ~/working/fastgrep/benchmark $ ./all_tests
 Celero
 Timer resolution: 0.001000 us
