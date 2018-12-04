@@ -77,10 +77,13 @@ namespace fastgrep {
             }
 
             // Update the line buffer with leftover data.
-            if (start != end) {
-                process_line(start, end - start);
-            }
+            if (start != end) { process_line(start, end - start); }
             pos += len;
+        }
+
+        void reset() {
+            lines = 0;
+            pos = 0;
         }
 
         Matcher matcher;
@@ -94,7 +97,7 @@ namespace fastgrep {
             }
         }
     };
-    
+
     namespace experiments {
         template <typename Matcher> class GrepPolicy {
           public:
