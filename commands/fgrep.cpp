@@ -12,11 +12,6 @@
 #include <string>
 #include <vector>
 
-// cereal
-#include "cereal/archives/json.hpp"
-#include "cereal/types/string.hpp"
-#include "cereal/types/vector.hpp"
-
 /**
  * The grep execution process has two steps:
  * 1. Expand the search paths and get the list of search files.
@@ -24,37 +19,50 @@
  */
 namespace {
     struct InputParams {
-        std::string pattern;            // Grep pattern
-        std::string path_pattern;       // Search path pattern
-        std::vector<std::string> paths; // Input files and folders
-        fastgrep::Params parameters;    // Grep parameters
-
-        template <typename Archive> void serialize(Archive &ar) {
-            ar(CEREAL_NVP(pattern), CEREAL_NVP(paths), CEREAL_NVP(parameters));
+        std::string pattern;                 // Grep pattern
+        std::string path_pattern;            // Search path pattern
+        std::vector<std::string> paths;      // Input files and folders
+        std::vector<std::string> extensions; // File extension want to search.
+        fastgrep::Params parameters;         // Grep parameters
+        void print() const {
+            fmt::print("Pattern: {}\n", pattern);
+            fmt::print("Path pattern: {}\n", pattern);
+            parameters.print();
         }
     };
 
     // Use clara to parse input argument.
     InputParams parse_input_arguments(int argc, char *argv[]) {
         InputParams params;
-        bool help;
-        auto cli =
-            clara::Help(help) |
-            clara::Opt(params.parameters.verbose)["-v"]["--verbose"]("Display verbose information") |
-            clara::Opt(params.parameters.inverse_match)["--inverse-match"](
-                "Only print out lines that do not match the search pattern.") |
-            clara::Opt(params.parameters.exact_match)["--exact-match"]("Use exact matching algorithms.") |
-            clara::Opt(params.parameters.ignore_case)["-i"]["--ignore-case"]("Ignore case") |
 
-            clara::Opt(params.parameters.stream)["--pipe"]("Get data from the input pipe/stream.") |
-            clara::Opt(params.parameters.color)["-c"]["--color"]("Print out color text.") |
-            clara::Opt(params.parameters.utf8)["--utf8"]("Support UTF8.") |
+        // Input argument
+        bool help = false;
+        bool linenum = true;        // Display line number.
+        bool inverse_match = false; // Inverse match i.e display lines that do not match given pattern.
+        bool exact_match = false;   // Use exact matching algorithm.
+        bool ignore_case = false;   // Ignore case.
+        bool use_memmap = true;     // Read the file content using memory mapped approach.
+        bool utf8 = false;          // Support UTF8.
+        bool color = false;         // Display color text.
+        bool stream = false;        // grep the input stream.
+        bool verbose = false;       // Display verbose information.
 
-            clara::Opt(params.pattern, "pattern")["-e"]["--pattern"]("Search pattern.") |
-            clara::Opt(params.path_pattern, "path_pattern")["-e"]["--pattern"]("Search pattern.") |
+        auto cli = clara::Help(help) |
+                   clara::Opt(verbose)["-v"]["--verbose"]("Display verbose information") |
+                   clara::Opt(inverse_match)["--inverse-match"](
+                       "Only print out lines that do not match the search pattern.") |
+                   clara::Opt(exact_match)["--exact-match"]("Use exact matching algorithms.") |
+                   clara::Opt(ignore_case)["-i"]["--ignore-case"]("Ignore case") |
 
-            // Required arguments.
-            clara::Arg(params.paths, "paths")("Search paths");
+                   clara::Opt(stream)["--pipe"]("Get data from the input pipe/stream.") |
+                   clara::Opt(color)["-c"]["--color"]("Print out color text.") |
+                   clara::Opt(utf8)["--utf8"]("Support UTF8.") |
+
+                   clara::Opt(params.pattern, "pattern")["-e"]["--pattern"]("Search pattern.") |
+                   clara::Opt(params.path_pattern, "path_pattern")["-e"]["--pattern"]("Search pattern.") |
+
+                   // Required arguments.
+                   clara::Arg(params.paths, "paths")("Search paths");
 
         auto result = cli.parse(clara::Args(argc, argv));
         if (!result) {
@@ -70,6 +78,13 @@ namespace {
             exit(EXIT_SUCCESS);
         }
 
+        // Update search parameters
+        params.parameters.regex_mode =
+            HS_FLAG_DOTALL | HS_FLAG_SINGLEMATCH | (ignore_case ? HS_FLAG_CASELESS : 0);
+        params.parameters.info = verbose * fastgrep::VERBOSE + color * fastgrep::COLOR +
+                                 linenum * fastgrep::LINENUM + utf8 * fastgrep::UTF8 +
+                                 use_memmap * fastgrep::USE_MEMMAP;
+
         // If users do not specify the search pattern then the first elements of paths is the search
         // pattern.
         if (params.pattern.empty()) {
@@ -81,22 +96,14 @@ namespace {
             params.paths.erase(params.paths.begin());
         }
 
-        // Display input arguments in JSON format if verbose flag is on
-        if (true) {
-            std::stringstream ss;
-            {
-                cereal::JSONOutputArchive ar(ss);
-                ar(cereal::make_nvp("Input arguments", params));
-            }
-            fmt::print("{}\n", ss.str());
-        }
+        if (verbose) params.print();
 
         return params;
     }
 } // namespace
 
 template <typename T> void fgrep(const InputParams &params) {
-    T grep(params.pattern.data());
+    T grep(params.pattern, params.parameters);
     for (auto afile : params.paths) { grep(afile.data()); }
 }
 
@@ -105,7 +112,7 @@ int main(int argc, char *argv[]) {
     auto params = parse_input_arguments(argc, argv);
 
     // Search for given pattern based on input parameters
-    // if (params.parameters.exact_match) {
+    if (params.parameters.exact_match()) {
     //     // using Matcher = utils::ExactMatchSSE2;
     //     using Matcher = utils::ExactMatchAVX2;
     //     if (params.parameters.use_memmap) {
@@ -115,16 +122,19 @@ int main(int argc, char *argv[]) {
     //         using Reader = ioutils::FileReader<fastgrep::GrepPolicy<Matcher>, BUFFER_SIZE>;
     //         fgrep<Reader>(params);
     //     }
-    // } else {
-    //     using Matcher = utils::hyperscan::RegexMatcher;
-    //     if (params.parameters.use_memmap) {
-    //         using Reader = ioutils::MMapReader<fastgrep::GrepPolicy<Matcher>>;
-    //         fgrep<Reader>(params);
-    //     } else {
-    //         using Reader = ioutils::FileReader<fastgrep::GrepPolicy<Matcher>, BUFFER_SIZE>;
-    //         fgrep<Reader>(params);
-    //     }
-    // }
+    } else {
+        using Matcher = utils::hyperscan::RegexMatcher;
+        if (params.parameters.use_memmap()) {
+            using Policy = typename fastgrep::MMapPolicy<Matcher>;
+            using Reader = ioutils::MMapReader<Policy>;
+            Policy pol(params.pattern, params.parameters);
+            // Reader grep(params.pattern, params.parameters);
+            fgrep<Reader>(params);
+        } else {
+            // using Reader = ioutils::FileReader<fastgrep::StreamPolicy<Matcher>, BUFFER_SIZE>;
+            // fgrep<Reader>(params);
+        }
+    }
 
     return EXIT_SUCCESS;
 }
