@@ -42,6 +42,7 @@ namespace {
         bool exact_match = false;   // Use exact matching algorithm.
         bool ignore_case = false;   // Ignore case.
         bool use_memmap = true;     // Read the file content using memory mapped approach.
+        bool use_stream = false;    // Read the file content using streaming approach.
         bool utf8 = false;          // Support UTF8.
         bool color = false;         // Display color text.
         bool stream = false;        // grep the input stream.
@@ -53,8 +54,8 @@ namespace {
                        "Only print out lines that do not match the search pattern.") |
                    clara::Opt(exact_match)["--exact-match"]("Use exact matching algorithms.") |
                    clara::Opt(ignore_case)["-i"]["--ignore-case"]("Ignore case") |
-
-                   clara::Opt(stream)["--pipe"]("Get data from the input pipe/stream.") |
+                   clara::Opt(use_stream)["--stream"]("Get data from the input pipe/stream.") |
+                   clara::Opt(use_memmap)["--mmap"]("Get data from the input pipe/stream.") |
                    clara::Opt(color)["-c"]["--color"]("Print out color text.") |
                    clara::Opt(utf8)["--utf8"]("Support UTF8.") |
 
@@ -77,6 +78,9 @@ namespace {
             fmt::print("{}", oss.str());
             exit(EXIT_SUCCESS);
         }
+
+        // Choose read approach
+        use_memmap = use_stream ? false : true;
 
         // Update search parameters
         params.parameters.regex_mode =
@@ -108,31 +112,31 @@ template <typename T> void fgrep(const InputParams &params) {
 }
 
 int main(int argc, char *argv[]) {
-    constexpr int BUFFER_SIZE = 1 << 17;
+    constexpr int BUFFER_SIZE = 1 << 16;
     auto params = parse_input_arguments(argc, argv);
 
     // Search for given pattern based on input parameters
     if (params.parameters.exact_match()) {
-    //     // using Matcher = utils::ExactMatchSSE2;
-    //     using Matcher = utils::ExactMatchAVX2;
-    //     if (params.parameters.use_memmap) {
-    //         using Reader = ioutils::MMapReader<fastgrep::GrepPolicy<Matcher>>;
-    //         fgrep<Reader>(params);
-    //     } else {
-    //         using Reader = ioutils::FileReader<fastgrep::GrepPolicy<Matcher>, BUFFER_SIZE>;
-    //         fgrep<Reader>(params);
-    //     }
+        // using Matcher = utils::ExactMatchSSE2;
+        using Matcher = utils::ExactMatchAVX2;
+        if (params.parameters.use_memmap()) {
+            // using Policy = typename fastgrep::MMapPolicy<Matcher>;
+            // using Reader = ioutils::MMapReader<Policy>;
+            // fgrep<Reader>(params);
+        } else {
+            // using Reader = ioutils::FileReader<fastgrep::GrepPolicy<Matcher>, BUFFER_SIZE>;
+            // fgrep<Reader>(params);
+        }
     } else {
         using Matcher = utils::hyperscan::RegexMatcher;
         if (params.parameters.use_memmap()) {
             using Policy = typename fastgrep::MMapPolicy<Matcher>;
             using Reader = ioutils::MMapReader<Policy>;
-            Policy pol(params.pattern, params.parameters);
-            // Reader grep(params.pattern, params.parameters);
             fgrep<Reader>(params);
         } else {
-            // using Reader = ioutils::FileReader<fastgrep::StreamPolicy<Matcher>, BUFFER_SIZE>;
-            // fgrep<Reader>(params);
+            using Policy = typename fastgrep::StreamPolicy<Matcher>;
+            using Reader = ioutils::FileReader<Policy, BUFFER_SIZE>;
+            fgrep<Reader>(params);
         }
     }
 
