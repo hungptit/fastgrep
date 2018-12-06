@@ -77,10 +77,6 @@ add_cxx_compiler_flag(-DUSE_AVX2)
 ENABLE_TESTING()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Libraries used by rocksdb
-set(LIB_CELERO "${EXTERNAL_DIR}/lib/libcelero.a")
-set(LIB_JEMALLOC "${EXTERNAL_DIR}/lib/libjemalloc.a")
-
 # Include folder
 include_directories ("${EXTERNAL_DIR}/include")
 include_directories ("${ROOT_DIR}/src")
