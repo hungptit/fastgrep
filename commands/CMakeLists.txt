@@ -72,31 +72,14 @@ endif()
 
 add_cxx_compiler_flag(-DFMT_HEADER_ONLY)
 add_cxx_compiler_flag(-DCEREAL_RAPIDJSON_HAS_CXX11_RVALUE_REFS)
+add_cxx_compiler_flag(-DUSE_AVX2)
 
 ENABLE_TESTING()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Libraries used by rocksdb
-set(LIB_CELERO "${EXTERNAL_DIR}/lib/libcelero.a")
-set(LIB_JEMALLOC "${EXTERNAL_DIR}/lib/libjemalloc.a")
-
 # Include folder
 include_directories ("${EXTERNAL_DIR}/include")
 include_directories ("${ROOT_DIR}/src")
-
-# This option make sure that we use the local boost version. Note that if the
-# system boost is installed then CMake might use that boost version.
-set(Boost_USE_STATIC_LIBS ON)
-set(Boost_USE_MULTITHREADED ON)
-set(Boost_USE_STATIC_RUNTIME OFF)
-set(Boost_NO_SYSTEM_PATHS TRUE)
-if (Boost_NO_SYSTEM_PATHS)
-  set(BOOST_ROOT "${EXTERNAL_DIR}")
-  set(BOOST_INCLUDE_DIRS "${BOOST_ROOT}/include")
-  set(BOOST_LIBRARY_DIRS "${BOOST_ROOT}/lib")
-endif (Boost_NO_SYSTEM_PATHS)
-# message(${BOOST_ROOT})
-find_package(Boost REQUIRED program_options)
 
 # Hyperscan
 SET(LIB_HS "${EXTERNAL_DIR}/lib/libhs.a")
@@ -104,11 +87,9 @@ SET(LIB_HS_RUNTIME "${EXTERNAL_DIR}/lib/libhs_runtime.a")
 
 # Build all
 set(CMAKE_INSTALL_PREFIX "$ENV{HOME}")
-if (Boost_FOUND)
-  set(COMMAND_SRC_FILES fgrep)
-  foreach (src_file ${COMMAND_SRC_FILES})
-    ADD_EXECUTABLE(${src_file} ${src_file}.cpp)
-    TARGET_LINK_LIBRARIES(${src_file}  ${Boost_LIBRARIES} ${LIB_HS} ${LIB_HS_RUNTIME})
-  endforeach (src_file)
-  INSTALL_PROGRAMS("/bin/" FILES ${COMMAND_SRC_FILES})
-endif (Boost_FOUND)
+set(COMMAND_SRC_FILES fgrep)
+foreach (src_file ${COMMAND_SRC_FILES})
+  ADD_EXECUTABLE(${src_file} ${src_file}.cpp)
+  TARGET_LINK_LIBRARIES(${src_file} ${LIB_HS} ${LIB_HS_RUNTIME})
+endforeach (src_file)
+INSTALL_PROGRAMS("/bin/" FILES ${COMMAND_SRC_FILES})

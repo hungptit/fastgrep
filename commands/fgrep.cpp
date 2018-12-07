@@ -1,7 +1,8 @@
-#include "boost/program_options.hpp"
+#include "clara.hpp"
 #include "fmt/format.h"
 #include "grep.hpp"
 #include "ioutils/ioutils.hpp"
+#include "params.hpp"
 #include "utils/matchers.hpp"
 #include "utils/matchers_avx2.hpp"
 #include "utils/regex_matchers.hpp"
@@ -11,145 +12,138 @@
 #include <string>
 #include <vector>
 
-// fmt header
-#include "fmt/format.h"
-
-// cereal headers
-#include "cereal/archives/binary.hpp"
-#include "cereal/archives/json.hpp"
-#include "cereal/archives/portable_binary.hpp"
-#include "cereal/archives/xml.hpp"
-#include "cereal/types/array.hpp"
-#include "cereal/types/deque.hpp"
-#include "cereal/types/string.hpp"
-#include "cereal/types/vector.hpp"
-
+/**
+ * The grep execution process has two steps:
+ * 1. Expand the search paths and get the list of search files.
+ * 2. Search for given pattern using file contents and display the search results.
+ */
 namespace {
-    struct GrepParams {
-        bool ignore_case;      // Ignore case distinctions
-        bool invert_match;     // Select non-matching lines
-        bool exact_match;      // Use exact matching algorithms.
-        bool use_memmap;       // Map files into memory.
-        bool show_line_number; // Show line number
-
-        template <typename Archive> void serialize(Archive &ar) {
-            ar(CEREAL_NVP(ignore_case), CEREAL_NVP(invert_match), CEREAL_NVP(exact_match),
-               CEREAL_NVP(use_memmap), CEREAL_NVP(show_line_number));
-        }
-    };
-
     struct InputParams {
-        std::string pattern;            // Input patterns
-        std::vector<std::string> files; // Input files and folders
-        std::string output_file;        // Output file
-        GrepParams parameters;
-
-        template <typename Archive> void serialize(Archive &ar) {
-            ar(CEREAL_NVP(pattern), CEREAL_NVP(files), CEREAL_NVP(output_file),
-               CEREAL_NVP(parameters));
+        std::string pattern;                 // Grep pattern
+        std::string path_pattern;            // Search path pattern
+        std::vector<std::string> paths;      // Input files and folders
+        std::vector<std::string> extensions; // File extension want to search.
+        fastgrep::Params parameters;         // Grep parameters
+        void print() const {
+            fmt::print("Pattern: {}\n", pattern);
+            fmt::print("Path pattern: {}\n", pattern);
+            parameters.print();
         }
     };
 
+    // Use clara to parse input argument.
     InputParams parse_input_arguments(int argc, char *argv[]) {
-        namespace po = boost::program_options;
-        po::options_description desc("Allowed options");
         InputParams params;
-        std::vector<std::string> paths;
 
-        // clang-format off
-        desc.add_options()
-            ("help,h", "Print this help")
-            ("verbose,v", "Display verbose information.")
-            ("pattern,p", po::value<std::string>(&params.pattern), "Search pattern")
-            ("files,f", po::value<std::vector<std::string>>(&paths), "A list of files and folders")
-            ("output-file,o", po::value<std::string>(&params.output_file), "Output file")
-            ("ignore-case", po::value<bool>(&params.parameters.ignore_case)->default_value(false), "Ignore case.")
-            ("invert-match", po::value<bool>(&params.parameters.invert_match)->default_value(false), "Select non-matching lines.")
-            ("exact-match", po::value<bool>(&params.parameters.exact_match)->default_value(false), "Use exact matching algorithms")
-            ("show-line-number", po::value<bool>(&params.parameters.show_line_number)->default_value(false), "Show line number")
-            ("use-mmap", po::value<bool>(&params.parameters.use_memmap)->default_value(true), "Map files into memory.");
-        // clang-format on
+        // Input argument
+        bool help = false;
+        bool linenum = true;        // Display line number.
+        bool inverse_match = false; // Inverse match i.e display lines that do not match given pattern.
+        bool exact_match = false;   // Use exact matching algorithm.
+        bool ignore_case = false;   // Ignore case.
 
-        // Parse input arguments
-        po::positional_options_description p;
-        p.add("files", -1);
-        po::variables_map vm;
-        po::store(po::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
-        po::notify(vm);
+        bool use_memmap = false; // Read the file content using memory mapped approach.
+        bool use_stream = true;  // Read the file content using streaming approach.
+        // bool use_pipe = false;   // Read the file content using streaming approach.
 
-        // Pre-process input arguments
-        if (vm.count("help")) {
-            std::cout << desc << "\n";
-            std::cout << "Examples:" << "\n";
-            std::cout << "    fgrep Fooo boo.txt" << "\n";
-            std::cout << "    fgrep -p Fooo boo.txt" << "\n";
+        bool utf8 = false;    // Support UTF8.
+        bool utf16 = false;    // Support UTF16.
+        bool utf32 = false;    // Support UTF32.
+        bool color = false;   // Display color text.
+        bool stream = false;  // grep the input stream.
+        bool verbose = false; // Display verbose information.
 
+        auto cli = clara::Help(help) |
+                   clara::Opt(verbose)["-v"]["--verbose"]("Display verbose information") |
+                   clara::Opt(inverse_match)["--inverse-match"](
+                       "Only print out lines that do not match the search pattern.") |
+                   clara::Opt(exact_match)["--exact-match"]("Use exact matching algorithms.") |
+                   clara::Opt(ignore_case)["-i"]["--ignore-case"]("Ignore case") |
+                   clara::Opt(use_stream)["--stream"]("Get data from the input pipe/stream.") |
+                   clara::Opt(use_memmap)["--mmap"]("Get data from the input pipe/stream.") |
+                   clara::Opt(color)["-c"]["--color"]("Print out color text.") |
+                   clara::Opt(utf8)["--utf8"]("Support UTF8.") |
+                   clara::Opt(utf16)["--utf16"]("Support UTF8.") |
+                   clara::Opt(utf32)["--utf32"]("Support UTF8.") |
+
+                   clara::Opt(params.pattern, "pattern")["-e"]["--pattern"]("Search pattern.") |
+                   clara::Opt(params.path_pattern, "path_pattern")["-e"]["--pattern"]("Search pattern.") |
+
+                   // Required arguments.
+                   clara::Arg(params.paths, "paths")("Search paths");
+
+        auto result = cli.parse(clara::Args(argc, argv));
+        if (!result) {
+            fmt::print(stderr, "Invalid option: {}\n", result.errorMessage());
+            exit(EXIT_FAILURE);
+        }
+
+        // If users want to print out the help message then display the help message and exit.
+        if (help) {
+            std::ostringstream oss;
+            oss << cli;
+            fmt::print("{}", oss.str());
             exit(EXIT_SUCCESS);
         }
 
-        if (paths.empty()) {
-            throw(std::runtime_error("Must provide pattern and file paths."));
-        }
-        auto begin = paths.cbegin();
+        // Choose read approach
+        use_memmap = use_stream ? false : true;
 
-        // If users do not specify pattern then we use the first file
-        // element as a pattern to make fgrep interface consistent
-        // with that of grep.
+        // Update search parameters
+        params.parameters.regex_mode =
+            HS_FLAG_DOTALL | HS_FLAG_SINGLEMATCH | (ignore_case ? HS_FLAG_CASELESS : 0);
+        params.parameters.info = verbose * fastgrep::VERBOSE + color * fastgrep::COLOR +
+                                 linenum * fastgrep::LINENUM + utf8 * fastgrep::UTF8 +
+            use_memmap * fastgrep::USE_MEMMAP + exact_match * fastgrep::EXACT_MATCH;
+
+        // If users do not specify the search pattern then the first elements of paths is the search
+        // pattern.
         if (params.pattern.empty()) {
-            params.pattern = *begin;
-            ++begin;
-        }
-
-        for (; begin != paths.end(); ++begin) {
-            // TODO: FIXME
-            params.files.emplace_back(*begin);
-        }
-
-        // Display input arguments in JSON format if verbose flag is on
-        if (vm.count("verbose")) {
-            std::stringstream ss;
-            {
-                cereal::JSONOutputArchive ar(ss);
-                ar(cereal::make_nvp("Input arguments", params));
+            if (params.paths.size() < 2) {
+                throw std::runtime_error(
+                    "Invalid syntax. The search pattern and search paths are required.");
             }
-            fmt::print("{}\n", ss.str());
+            params.pattern = params.paths.front();
+            params.paths.erase(params.paths.begin());
         }
+
+        if (verbose) params.print();
 
         return params;
     }
 } // namespace
 
-template <typename T>
-void fgrep(const InputParams &params) {
-    T grep(params.pattern.data());
-    for (auto afile : params.files) { grep(afile.data()); }
+template <typename T> void fgrep(const InputParams &params) {
+    T grep(params.pattern, params.parameters);
+    for (auto afile : params.paths) { grep(afile.data()); }
 }
 
 int main(int argc, char *argv[]) {
-    constexpr int BUFFER_SIZE = 1 << 17;
+    constexpr int BUFFER_SIZE = 1 << 16;
     auto params = parse_input_arguments(argc, argv);
 
     // Search for given pattern based on input parameters
-    if (params.parameters.exact_match) {
-        // using Matcher = utils::ExactMatchSSE2;
+    if (params.parameters.exact_match()) {
         using Matcher = utils::ExactMatchAVX2;
-        if (params.parameters.use_memmap) {
-            using Reader = ioutils::MMapReader<fastgrep::GrepPolicy<Matcher>>;
+        if (params.parameters.use_memmap()) {
+            using Policy = typename fastgrep::MMapPolicy<Matcher>;
+            using Reader = ioutils::MMapReader<Policy>;
             fgrep<Reader>(params);
         } else {
-            using Reader = ioutils::FileReader<fastgrep::GrepPolicy<Matcher>, BUFFER_SIZE>;
+            using Reader = ioutils::FileReader<fastgrep::StreamPolicy<Matcher>, BUFFER_SIZE>;
             fgrep<Reader>(params);
         }
     } else {
         using Matcher = utils::hyperscan::RegexMatcher;
-        if (params.parameters.use_memmap) {
-            using Reader = ioutils::MMapReader<fastgrep::GrepPolicy<Matcher>>;
+        if (params.parameters.use_memmap()) {
+            using Policy = typename fastgrep::MMapPolicy<Matcher>;
+            using Reader = ioutils::MMapReader<Policy>;
             fgrep<Reader>(params);
         } else {
-            using Reader = ioutils::FileReader<fastgrep::GrepPolicy<Matcher>, BUFFER_SIZE>;
+            using Policy = typename fastgrep::StreamPolicy<Matcher>;
+            using Reader = ioutils::FileReader<Policy, BUFFER_SIZE>;
             fgrep<Reader>(params);
         }
-
     }
 
     return EXIT_SUCCESS;
