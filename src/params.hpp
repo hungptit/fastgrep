@@ -10,7 +10,8 @@ namespace fastgrep {
         UTF8 = 1 << 4,
         UTF16 = 1 << 5,
         UTF32 = 1 << 6,
-        LINENUM = 1 << 7
+        LINENUM = 1 << 7,
+        INVERSE_MATCH = 1 << 8,
     };
 
     struct Params {
@@ -20,6 +21,7 @@ namespace fastgrep {
         bool color() const { return (info & COLOR) > 0; }
         bool use_memmap() const { return (info & USE_MEMMAP) > 0; }
         bool exact_match() const { return (info & EXACT_MATCH) > 0; }
+        bool inverse_match() const { return (info & INVERSE_MATCH) > 0; }
         bool linenum() const { return (info & LINENUM) > 0; }
         bool utf8() const { return (info & UTF8) > 0; }
         bool utf16() const { return (info & UTF16) > 0; }

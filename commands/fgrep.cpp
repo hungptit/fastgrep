@@ -37,7 +37,7 @@ namespace {
 
         // Input argument
         bool help = false;
-        bool linenum = true;        // Display line number.
+        bool linenum = false;       // Display line number.
         bool inverse_match = false; // Inverse match i.e display lines that do not match given pattern.
         bool exact_match = false;   // Use exact matching algorithm.
         bool ignore_case = false;   // Ignore case.
@@ -45,32 +45,32 @@ namespace {
         bool use_memmap = false; // Read the file content using memory mapped approach.
         bool use_stream = true;  // Read the file content using streaming approach.
         // bool use_pipe = false;   // Read the file content using streaming approach.
-
-        bool utf8 = false;    // Support UTF8.
-        bool utf16 = false;    // Support UTF16.
-        bool utf32 = false;    // Support UTF32.
         bool color = false;   // Display color text.
-        bool stream = false;  // grep the input stream.
         bool verbose = false; // Display verbose information.
 
-        auto cli = clara::Help(help) |
-                   clara::Opt(verbose)["-v"]["--verbose"]("Display verbose information") |
-                   clara::Opt(inverse_match)["--inverse-match"](
-                       "Only print out lines that do not match the search pattern.") |
-                   clara::Opt(exact_match)["--exact-match"]("Use exact matching algorithms.") |
-                   clara::Opt(ignore_case)["-i"]["--ignore-case"]("Ignore case") |
-                   clara::Opt(use_stream)["--stream"]("Get data from the input pipe/stream.") |
-                   clara::Opt(use_memmap)["--mmap"]("Get data from the input pipe/stream.") |
-                   clara::Opt(color)["-c"]["--color"]("Print out color text.") |
-                   clara::Opt(utf8)["--utf8"]("Support UTF8.") |
-                   clara::Opt(utf16)["--utf16"]("Support UTF8.") |
-                   clara::Opt(utf32)["--utf32"]("Support UTF8.") |
+        // TODO: Support Unicode
+        bool utf8 = false;  // Support UTF8.
+        bool utf16 = false; // Support UTF16.
+        bool utf32 = false; // Support UTF32.
 
-                   clara::Opt(params.pattern, "pattern")["-e"]["--pattern"]("Search pattern.") |
-                   clara::Opt(params.path_pattern, "path_pattern")["-e"]["--pattern"]("Search pattern.") |
+        auto cli =
+            clara::Help(help) | clara::Opt(verbose)["-v"]["--verbose"]("Display verbose information") |
+            clara::Opt(exact_match)["--exact-match"]("Use exact matching algorithms.") |
+            clara::Opt(inverse_match)["--inverse-match"]("Print lines that do not match given pattern.") |
+            clara::Opt(ignore_case)["-i"]["--ignore-case"]("Ignore case") |
+            clara::Opt(use_stream)["--stream"]("Get data from the input pipe/stream.") |
+            clara::Opt(use_memmap)["--mmap"]("Get data from the input pipe/stream.") |
+            clara::Opt(color)["-c"]["--color"]("Print out color text.") |
+            clara::Opt(linenum)["-l"]["--linenum"]("Display line number.") |
+            clara::Opt(utf8)["--utf8"]("Support UTF8 (WIP).") |
+            clara::Opt(utf16)["--utf16"]("Support UTF16 (WIP).") |
+            clara::Opt(utf32)["--utf32"]("Support UTF32 (WIP).") |
 
-                   // Required arguments.
-                   clara::Arg(params.paths, "paths")("Search paths");
+            clara::Opt(params.pattern, "pattern")["-e"]["--pattern"]("Search pattern.") |
+            clara::Opt(params.path_pattern, "path_pattern")["-e"]["--pattern"]("Search pattern.") |
+
+            // Required arguments.
+            clara::Arg(params.paths, "paths")("Search paths");
 
         auto result = cli.parse(clara::Args(argc, argv));
         if (!result) {
@@ -92,9 +92,10 @@ namespace {
         // Update search parameters
         params.parameters.regex_mode =
             HS_FLAG_DOTALL | HS_FLAG_SINGLEMATCH | (ignore_case ? HS_FLAG_CASELESS : 0);
-        params.parameters.info = verbose * fastgrep::VERBOSE + color * fastgrep::COLOR +
-                                 linenum * fastgrep::LINENUM + utf8 * fastgrep::UTF8 +
-            use_memmap * fastgrep::USE_MEMMAP + exact_match * fastgrep::EXACT_MATCH;
+        params.parameters.info = verbose * fastgrep::VERBOSE | color * fastgrep::COLOR |
+                                 linenum * fastgrep::LINENUM | utf8 * fastgrep::UTF8 |
+                                 use_memmap * fastgrep::USE_MEMMAP | exact_match * fastgrep::EXACT_MATCH |
+                                 inverse_match * fastgrep::INVERSE_MATCH;
 
         // If users do not specify the search pattern then the first elements of paths is the search
         // pattern.
@@ -113,14 +114,16 @@ namespace {
     }
 } // namespace
 
+// TODO: Find all files in the given paths.
+// TODO: Support reading from a pipe.
 template <typename T> void fgrep(const InputParams &params) {
     T grep(params.pattern, params.parameters);
     for (auto afile : params.paths) { grep(afile.data()); }
 }
 
 int main(int argc, char *argv[]) {
-    constexpr int BUFFER_SIZE = 1 << 16;
     auto params = parse_input_arguments(argc, argv);
+    constexpr int BUFFER_SIZE = 1 << 16;
 
     // Search for given pattern based on input parameters
     if (params.parameters.exact_match()) {
@@ -134,15 +137,28 @@ int main(int argc, char *argv[]) {
             fgrep<Reader>(params);
         }
     } else {
-        using Matcher = utils::hyperscan::RegexMatcher;
-        if (params.parameters.use_memmap()) {
-            using Policy = typename fastgrep::MMapPolicy<Matcher>;
-            using Reader = ioutils::MMapReader<Policy>;
-            fgrep<Reader>(params);
+        if (!params.parameters.inverse_match()) {
+            using Matcher = utils::hyperscan::RegexMatcher;
+            if (params.parameters.use_memmap()) {
+                using Policy = typename fastgrep::MMapPolicy<Matcher>;
+                using Reader = ioutils::MMapReader<Policy>;
+                fgrep<Reader>(params);
+            } else {
+                using Policy = typename fastgrep::StreamPolicy<Matcher>;
+                using Reader = ioutils::FileReader<Policy, BUFFER_SIZE>;
+                fgrep<Reader>(params);
+            }
         } else {
-            using Policy = typename fastgrep::StreamPolicy<Matcher>;
-            using Reader = ioutils::FileReader<Policy, BUFFER_SIZE>;
-            fgrep<Reader>(params);
+            using Matcher = utils::hyperscan::RegexMatcherInv;
+            if (params.parameters.use_memmap()) {
+                using Policy = typename fastgrep::MMapPolicy<Matcher>;
+                using Reader = ioutils::MMapReader<Policy>;
+                fgrep<Reader>(params);
+            } else {
+                using Policy = typename fastgrep::StreamPolicy<Matcher>;
+                using Reader = ioutils::FileReader<Policy, BUFFER_SIZE>;
+                fgrep<Reader>(params);
+            }
         }
     }
 
