@@ -41,12 +41,17 @@ namespace {
         bool inverse_match = false; // Inverse match i.e display lines that do not match given pattern.
         bool exact_match = false;   // Use exact matching algorithm.
         bool ignore_case = false;   // Ignore case.
-        bool use_memmap = true;     // Read the file content using memory mapped approach.
-        bool use_stream = false;    // Read the file content using streaming approach.
-        bool utf8 = false;          // Support UTF8.
-        bool color = false;         // Display color text.
-        bool stream = false;        // grep the input stream.
-        bool verbose = false;       // Display verbose information.
+
+        bool use_memmap = false; // Read the file content using memory mapped approach.
+        bool use_stream = true;  // Read the file content using streaming approach.
+        // bool use_pipe = false;   // Read the file content using streaming approach.
+
+        bool utf8 = false;    // Support UTF8.
+        bool utf16 = false;    // Support UTF16.
+        bool utf32 = false;    // Support UTF32.
+        bool color = false;   // Display color text.
+        bool stream = false;  // grep the input stream.
+        bool verbose = false; // Display verbose information.
 
         auto cli = clara::Help(help) |
                    clara::Opt(verbose)["-v"]["--verbose"]("Display verbose information") |
@@ -58,6 +63,8 @@ namespace {
                    clara::Opt(use_memmap)["--mmap"]("Get data from the input pipe/stream.") |
                    clara::Opt(color)["-c"]["--color"]("Print out color text.") |
                    clara::Opt(utf8)["--utf8"]("Support UTF8.") |
+                   clara::Opt(utf16)["--utf16"]("Support UTF8.") |
+                   clara::Opt(utf32)["--utf32"]("Support UTF8.") |
 
                    clara::Opt(params.pattern, "pattern")["-e"]["--pattern"]("Search pattern.") |
                    clara::Opt(params.path_pattern, "path_pattern")["-e"]["--pattern"]("Search pattern.") |
@@ -87,7 +94,7 @@ namespace {
             HS_FLAG_DOTALL | HS_FLAG_SINGLEMATCH | (ignore_case ? HS_FLAG_CASELESS : 0);
         params.parameters.info = verbose * fastgrep::VERBOSE + color * fastgrep::COLOR +
                                  linenum * fastgrep::LINENUM + utf8 * fastgrep::UTF8 +
-                                 use_memmap * fastgrep::USE_MEMMAP;
+            use_memmap * fastgrep::USE_MEMMAP + exact_match * fastgrep::EXACT_MATCH;
 
         // If users do not specify the search pattern then the first elements of paths is the search
         // pattern.
@@ -117,15 +124,14 @@ int main(int argc, char *argv[]) {
 
     // Search for given pattern based on input parameters
     if (params.parameters.exact_match()) {
-        // using Matcher = utils::ExactMatchSSE2;
         using Matcher = utils::ExactMatchAVX2;
         if (params.parameters.use_memmap()) {
-            // using Policy = typename fastgrep::MMapPolicy<Matcher>;
-            // using Reader = ioutils::MMapReader<Policy>;
-            // fgrep<Reader>(params);
+            using Policy = typename fastgrep::MMapPolicy<Matcher>;
+            using Reader = ioutils::MMapReader<Policy>;
+            fgrep<Reader>(params);
         } else {
-            // using Reader = ioutils::FileReader<fastgrep::GrepPolicy<Matcher>, BUFFER_SIZE>;
-            // fgrep<Reader>(params);
+            using Reader = ioutils::FileReader<fastgrep::StreamPolicy<Matcher>, BUFFER_SIZE>;
+            fgrep<Reader>(params);
         }
     } else {
         using Matcher = utils::hyperscan::RegexMatcher;

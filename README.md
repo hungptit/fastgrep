@@ -45,6 +45,7 @@ Test data and patterns are obtained from this [article](https://rust-leipzig.git
 * The output of all commands are redirected to a temporary file.
 
 ## Results ##
+**Linux**
 ```
 hungptit@hunghien ~/working/fastgrep/benchmark $ ./all_tests
 Celero
@@ -57,6 +58,28 @@ mark_twain      | fgrep_warm_up   |               0 |               5 |         
 mark_twain      | ag              |               0 |               5 |               1 |         1.23523 |   1258645.00000 |            0.79 |
 mark_twain      | ripgrep         |               0 |               5 |               1 |         0.62198 |    633772.00000 |            1.58 |
 mark_twain      | fgrep           |               0 |               5 |               1 |         0.39076 |    398173.00000 |            2.51 |
+Complete.
+```
+**MacOS**
+
+Below benchmark results are collected with 
+* GNU grep 3.1
+* ag 2.2.0
+* rg 0.10.0
+* fgrep master branch.
+
+``` shell
+./all_tests
+Celero
+Timer resolution: 0.001000 us
+-----------------------------------------------------------------------------------------------------------------------------------------------
+     Group      |   Experiment    |   Prob. Space   |     Samples     |   Iterations    |    Baseline     |  us/Iteration   | Iterations/sec  |
+-----------------------------------------------------------------------------------------------------------------------------------------------
+mark_twain      | grep_brew       |               0 |               5 |               1 |         1.00000 |   1325375.00000 |            0.75 |
+mark_twain      | ag              |               0 |               5 |               1 |         1.70750 |   2263073.00000 |            0.44 |
+mark_twain      | ripgrep         |               0 |               5 |               1 |         0.54094 |    716950.00000 |            1.39 |
+mark_twain      | fgrep_mmap      |               0 |               5 |               1 |         0.56084 |    743325.00000 |            1.35 |
+mark_twain      | fgrep_stream    |               0 |               5 |               1 |         0.49298 |    653379.00000 |            1.53 |
 Complete.
 ```
 
