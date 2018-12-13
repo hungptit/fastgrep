@@ -12,6 +12,7 @@ namespace fastgrep {
         UTF32 = 1 << 6,
         LINENUM = 1 << 7,
         INVERSE_MATCH = 1 << 8,
+        STDIN = 1 << 9,
     };
 
     struct Params {

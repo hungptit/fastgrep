@@ -1,7 +1,8 @@
 #include "clara.hpp"
 #include "fmt/format.h"
 #include "grep.hpp"
-#include "ioutils/ioutils.hpp"
+#include "ioutils/reader.hpp"
+#include "ioutils/stream.hpp"
 #include "params.hpp"
 #include "utils/matchers.hpp"
 #include "utils/matchers_avx2.hpp"
@@ -44,9 +45,9 @@ namespace {
 
         bool use_memmap = false; // Read the file content using memory mapped approach.
         bool use_stream = true;  // Read the file content using streaming approach.
-        // bool use_pipe = false;   // Read the file content using streaming approach.
-        bool color = false;   // Display color text.
-        bool verbose = false; // Display verbose information.
+        bool stdin = false;      // Read data from STDIN.
+        bool color = false;      // Display color text.
+        bool verbose = false;    // Display verbose information.
 
         // TODO: Support Unicode
         bool utf8 = false;  // Support UTF8.
@@ -62,6 +63,7 @@ namespace {
             clara::Opt(use_memmap)["--mmap"]("Get data from the input pipe/stream.") |
             clara::Opt(color)["-c"]["--color"]("Print out color text.") |
             clara::Opt(linenum)["-l"]["--linenum"]("Display line number.") |
+            clara::Opt(stdin)["-s"]["--stdin"]("Read data from the STDIN.") |
             clara::Opt(utf8)["--utf8"]("Support UTF8 (WIP).") |
             clara::Opt(utf16)["--utf16"]("Support UTF16 (WIP).") |
             clara::Opt(utf32)["--utf32"]("Support UTF32 (WIP).") |
@@ -95,12 +97,12 @@ namespace {
         params.parameters.info = verbose * fastgrep::VERBOSE | color * fastgrep::COLOR |
                                  linenum * fastgrep::LINENUM | utf8 * fastgrep::UTF8 |
                                  use_memmap * fastgrep::USE_MEMMAP | exact_match * fastgrep::EXACT_MATCH |
-                                 inverse_match * fastgrep::INVERSE_MATCH;
+                                 inverse_match * fastgrep::INVERSE_MATCH | stdin * fastgrep::STDIN;
 
         // If users do not specify the search pattern then the first elements of paths is the search
         // pattern.
         if (params.pattern.empty()) {
-            if (params.paths.size() < 2) {
+            if (!stdin && params.paths.size() < 2) {
                 throw std::runtime_error(
                     "Invalid syntax. The search pattern and search paths are required.");
             }
@@ -115,10 +117,15 @@ namespace {
 } // namespace
 
 // TODO: Find all files in the given paths.
-// TODO: Support reading from a pipe.
 template <typename T> void fgrep(const InputParams &params) {
     T grep(params.pattern, params.parameters);
     for (auto afile : params.paths) { grep(afile.data()); }
+}
+
+// grep for desired lines from STDIN
+template <typename T> void fgrep_stdin(const InputParams &params) {
+    T grep(params.pattern, params.parameters);
+    grep(STDIN_FILENO);
 }
 
 int main(int argc, char *argv[]) {
@@ -132,9 +139,10 @@ int main(int argc, char *argv[]) {
             using Policy = typename fastgrep::MMapPolicy<Matcher>;
             using Reader = ioutils::MMapReader<Policy>;
             fgrep<Reader>(params);
-        } else {
-            using Reader = ioutils::FileReader<fastgrep::StreamPolicy<Matcher>, BUFFER_SIZE>;
-            fgrep<Reader>(params);
+        } else if (stdin) {
+            using Policy = fastgrep::StreamPolicy<Matcher>;
+            stdin ? fgrep_stdin<ioutils::StreamReader<Policy, BUFFER_SIZE>>(params)
+                  : fgrep<ioutils::FileReader<Policy, BUFFER_SIZE>>(params);
         }
     } else {
         if (!params.parameters.inverse_match()) {
@@ -145,8 +153,8 @@ int main(int argc, char *argv[]) {
                 fgrep<Reader>(params);
             } else {
                 using Policy = typename fastgrep::StreamPolicy<Matcher>;
-                using Reader = ioutils::FileReader<Policy, BUFFER_SIZE>;
-                fgrep<Reader>(params);
+                stdin ? fgrep_stdin<ioutils::StreamReader<Policy, BUFFER_SIZE>>(params)
+                      : fgrep<ioutils::FileReader<Policy, BUFFER_SIZE>>(params);
             }
         } else {
             using Matcher = utils::hyperscan::RegexMatcherInv;
@@ -156,8 +164,8 @@ int main(int argc, char *argv[]) {
                 fgrep<Reader>(params);
             } else {
                 using Policy = typename fastgrep::StreamPolicy<Matcher>;
-                using Reader = ioutils::FileReader<Policy, BUFFER_SIZE>;
-                fgrep<Reader>(params);
+                stdin ? fgrep_stdin<ioutils::StreamReader<Policy, BUFFER_SIZE>>(params)
+                      : fgrep<ioutils::FileReader<Policy, BUFFER_SIZE>>(params);
             }
         }
     }
