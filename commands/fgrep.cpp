@@ -88,7 +88,7 @@ namespace {
             exit(EXIT_SUCCESS);
         }
 
-        // Choose read approach
+        // Select the file read algorithm.
         use_memmap = use_stream ? false : true;
 
         // Update search parameters
@@ -139,10 +139,10 @@ int main(int argc, char *argv[]) {
             using Policy = typename fastgrep::MMapPolicy<Matcher>;
             using Reader = ioutils::MMapReader<Policy>;
             fgrep<Reader>(params);
-        } else if (stdin) {
+        } else {
             using Policy = fastgrep::StreamPolicy<Matcher>;
-            stdin ? fgrep_stdin<ioutils::StreamReader<Policy, BUFFER_SIZE>>(params)
-                  : fgrep<ioutils::FileReader<Policy, BUFFER_SIZE>>(params);
+            params.parameters.stdin() ? fgrep_stdin<ioutils::StreamReader<Policy, BUFFER_SIZE>>(params)
+                                      : fgrep<ioutils::FileReader<Policy, BUFFER_SIZE>>(params);
         }
     } else {
         if (!params.parameters.inverse_match()) {
@@ -153,8 +153,8 @@ int main(int argc, char *argv[]) {
                 fgrep<Reader>(params);
             } else {
                 using Policy = typename fastgrep::StreamPolicy<Matcher>;
-                stdin ? fgrep_stdin<ioutils::StreamReader<Policy, BUFFER_SIZE>>(params)
-                      : fgrep<ioutils::FileReader<Policy, BUFFER_SIZE>>(params);
+                params.parameters.stdin() ? fgrep_stdin<ioutils::StreamReader<Policy, BUFFER_SIZE>>(params)
+                                          : fgrep<ioutils::FileReader<Policy, BUFFER_SIZE>>(params);
             }
         } else {
             using Matcher = utils::hyperscan::RegexMatcherInv;
@@ -164,8 +164,8 @@ int main(int argc, char *argv[]) {
                 fgrep<Reader>(params);
             } else {
                 using Policy = typename fastgrep::StreamPolicy<Matcher>;
-                stdin ? fgrep_stdin<ioutils::StreamReader<Policy, BUFFER_SIZE>>(params)
-                      : fgrep<ioutils::FileReader<Policy, BUFFER_SIZE>>(params);
+                params.parameters.stdin() ? fgrep_stdin<ioutils::StreamReader<Policy, BUFFER_SIZE>>(params)
+                                          : fgrep<ioutils::FileReader<Policy, BUFFER_SIZE>>(params);
             }
         }
     }
