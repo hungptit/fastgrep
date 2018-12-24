@@ -1,3 +1,4 @@
+* TODO Have a ConsolePolicy which 
 * Possible fields for a log message:
   + LEVEL: info, warn, error
   + MESSAGE:

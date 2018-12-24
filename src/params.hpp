@@ -2,7 +2,7 @@
 #include "fmt/format.h"
 
 namespace fastgrep {
-    enum PARAMS : int32_t {
+    enum PARAMS : uint32_t {
         VERBOSE = 1,
         COLOR = 1 << 1,
         EXACT_MATCH = 1 << 2,
@@ -16,8 +16,8 @@ namespace fastgrep {
     };
 
     struct Params {
-        int info;
-        int regex_mode;
+        int info = 0;
+        int regex_mode = 0;
         bool verbose() const { return (info & VERBOSE) > 0; }
         bool color() const { return (info & COLOR) > 0; }
         bool use_memmap() const { return (info & USE_MEMMAP) > 0; }
@@ -28,6 +28,8 @@ namespace fastgrep {
         bool utf8() const { return (info & UTF8) > 0; }
         bool utf16() const { return (info & UTF16) > 0; }
         bool utf32() const { return (info & UTF32) > 0; }
+
+        // TODO: Only need to add support for params in fmt.
         void print() const {
             fmt::print("verbose: {}\n", verbose());
             fmt::print("color: {}\n", color());

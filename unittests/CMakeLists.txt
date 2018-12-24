@@ -70,7 +70,7 @@ endif()
 
 add_cxx_compiler_flag(-DFMT_HEADER_ONLY)
 add_cxx_compiler_flag(-DCEREAL_RAPIDJSON_HAS_CXX11_RVALUE_REFS)
-# add_cxx_compiler_flag(-flto)
+add_cxx_compiler_flag(-DUSE_AVX2)
 
 ENABLE_TESTING()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -88,7 +88,7 @@ include_directories ("${ROOT_DIR}/src")
 SET(LIB_HS "${EXTERNAL_DIR}/lib/libhs.a")
 SET(LIB_HS_RUNTIME "${EXTERNAL_DIR}/lib/libhs_runtime.a")
 
-set(COMMAND_SRC_FILES parser)
+set(COMMAND_SRC_FILES parser stream_policy simple_policy console)
 foreach (src_file ${COMMAND_SRC_FILES})
   ADD_EXECUTABLE(${src_file} ${src_file}.cpp)
   TARGET_LINK_LIBRARIES(${src_file} ${LIB_HS})

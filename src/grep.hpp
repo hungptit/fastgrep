@@ -4,7 +4,7 @@
 #include <cstring>
 #include <string>
 #include "utils/memchr.hpp"
-#include "memmap.hpp"
+#include "simple_policy.hpp"
 #include "stream.hpp"
 
 namespace fastgrep {

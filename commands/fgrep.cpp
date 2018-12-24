@@ -130,13 +130,13 @@ template <typename T> void fgrep_stdin(const InputParams &params) {
 
 int main(int argc, char *argv[]) {
     auto params = parse_input_arguments(argc, argv);
-    constexpr int BUFFER_SIZE = 1 << 16;
+    constexpr int BUFFER_SIZE = 1 << 5;
 
     // Search for given pattern based on input parameters
     if (params.parameters.exact_match()) {
         using Matcher = utils::ExactMatchAVX2;
         if (params.parameters.use_memmap()) {
-            using Policy = typename fastgrep::MMapPolicy<Matcher>;
+            using Policy = typename fastgrep::SimplePolicy<Matcher>;
             using Reader = ioutils::MMapReader<Policy>;
             fgrep<Reader>(params);
         } else {
@@ -148,7 +148,7 @@ int main(int argc, char *argv[]) {
         if (!params.parameters.inverse_match()) {
             using Matcher = utils::hyperscan::RegexMatcher;
             if (params.parameters.use_memmap()) {
-                using Policy = typename fastgrep::MMapPolicy<Matcher>;
+                using Policy = typename fastgrep::SimplePolicy<Matcher>;
                 using Reader = ioutils::MMapReader<Policy>;
                 fgrep<Reader>(params);
             } else {
@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
         } else {
             using Matcher = utils::hyperscan::RegexMatcherInv;
             if (params.parameters.use_memmap()) {
-                using Policy = typename fastgrep::MMapPolicy<Matcher>;
+                using Policy = typename fastgrep::SimplePolicy<Matcher>;
                 using Reader = ioutils::MMapReader<Policy>;
                 fgrep<Reader>(params);
             } else {
