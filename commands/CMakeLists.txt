@@ -73,6 +73,7 @@ endif()
 add_cxx_compiler_flag(-DFMT_HEADER_ONLY)
 add_cxx_compiler_flag(-DCEREAL_RAPIDJSON_HAS_CXX11_RVALUE_REFS)
 add_cxx_compiler_flag(-DUSE_AVX2)
+add_cxx_compiler_flag(-static)
 
 ENABLE_TESTING()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

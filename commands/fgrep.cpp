@@ -130,7 +130,7 @@ template <typename T> void fgrep_stdin(const InputParams &params) {
 
 int main(int argc, char *argv[]) {
     auto params = parse_input_arguments(argc, argv);
-    constexpr int BUFFER_SIZE = 1 << 5;
+    constexpr int BUFFER_SIZE = 1 << 16;
 
     // Search for given pattern based on input parameters
     if (params.parameters.exact_match()) {
