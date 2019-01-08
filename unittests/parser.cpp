@@ -15,18 +15,16 @@
 
 std::string datafile("data.log");
 
-// TODO: How to mock fmt::print for testing purpose?
+TEST_CASE("Exact match using SSE2") {
+    using Matcher = utils::sse2::ExactMatcher;
+    using Policy = fastgrep::StreamPolicy<Matcher>;
+    fastgrep::Params params{};
+    ioutils::MMapReader<Policy> reader("This", params);
+    reader(datafile.data());
+}
 
-// TEST_CASE("Exact match SSE2", "SSE2") {
-//     using Matcher = utils::ExactMatchSSE2;
-//     using Policy = fastgrep::StreamPolicy<Matcher>;
-//     fastgrep::Params params{};
-//     ioutils::MMapReader<Policy> reader("This", params);
-//     reader(datafile.data());
-// }
-
-TEST_CASE("Exact match AVX2", "AVX2") {
-    using Matcher = utils::ExactMatchAVX2;
+TEST_CASE("Exact matcher") {
+    using Matcher = utils::ExactMatcher;
     using Policy = fastgrep::StreamPolicy<Matcher>;
     fastgrep::Params params{};
     ioutils::MMapReader<Policy> reader("This", params);
