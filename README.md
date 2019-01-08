@@ -30,14 +30,26 @@ All core algorithms are implemented using [Policy Based Design](https://en.wikip
 It is impossible to get a good benchmark for text searching tools since the performance of each benchmarked command is relied on search patterns. We use all patterns mentioned in this [link](https://rust-leipzig.github.io/regex/2017/03/28/comparison-of-regex-engines/) and their test data. All benchmarks can be found from the [benchmark folder](https://github.com/hungptit/fastgrep/tree/master/benchmark) and our benchmark results are consistent in all test platforms such as Gentoo kernel 4.17, CentOS 6.x, and macOS.
 
 ## Test environments ##
-* CPU: Intel(R) Core(TM) i7-6700HQ CPU @ 2.60GHz
-* System memory: 16GBytes
-* Hard drive: Samsung EVO 930.
-* OS: Gentoo Linux with kernel 4.17 with glibc-2.27 and gcc-7.3.
+**Linux**
+* CPU: * Intel(R) Xeon(R) CPU E5-2699 v4 @ 2.20GHz
+* System memory: 792 GBytes
+* Hard drive: Very fast network drives
+* OS: Kernel 3.8.13
+* Compiler: gcc-5.5.0
+
+**MacBook Pro**
+* CPU: 2.2 GHz Intel Core i7
+* System memory: 16 GBytes
+* Hard drive: SSD
+* OS: Darwin Kernel Version 16.7.0
+* Compiler: Apple LLVM version 9.0.0 (clang-900.0.39.2)
 
 ## Test data ##
 
-Test data and patterns are obtained from this [article](https://rust-leipzig.github.io/regex/2017/03/28/comparison-of-regex-engines/).
+Test data and patterns are obtained from this [article](https://rust-leipzig.github.io/regex/2017/03/28/comparison-of-regex-engines/). Benchmark results show that:
+* fastgrep and ripgrep performance are comparable. The binary size of fastgrep is significantly larger than ripgrep so it might be slower for small text files.
+* fastgrep and grep are similar interm of raw performance. 
+* ag is the slower than grep, ripgrep, and fastgrep.
 
 ## Experiment setup ##
 
@@ -46,18 +58,26 @@ Test data and patterns are obtained from this [article](https://rust-leipzig.git
 
 ## Results ##
 **Linux**
+
+Below benchmark results are collected with 
+* GNU grep 3.1
+* ag 2.2.0
+* rg 0.10.0
+* fgrep master branch.
+
 ```
-hungptit@hunghien ~/working/fastgrep/benchmark $ ./all_tests
+./all_tests
 Celero
 Timer resolution: 0.001000 us
 -----------------------------------------------------------------------------------------------------------------------------------------------
-Group           |   Experiment    |   Prob. Space   |     Samples     |   Iterations    |    Baseline     |  us/Iteration   | Iterations/sec  |
+     Group      |   Experiment    |   Prob. Space   |     Samples     |   Iterations    |    Baseline     |  us/Iteration   | Iterations/sec  |
 -----------------------------------------------------------------------------------------------------------------------------------------------
-mark_twain      | grep_brew       |               0 |               5 |               1 |         1.00000 |   1018958.00000 |            0.98 |
-mark_twain      | fgrep_warm_up   |               0 |               5 |               1 |         0.38867 |    396039.00000 |            2.53 |
-mark_twain      | ag              |               0 |               5 |               1 |         1.23523 |   1258645.00000 |            0.79 |
-mark_twain      | ripgrep         |               0 |               5 |               1 |         0.62198 |    633772.00000 |            1.58 |
-mark_twain      | fgrep           |               0 |               5 |               1 |         0.39076 |    398173.00000 |            2.51 |
+mark_twain      | grep            |               0 |               5 |               1 |         1.00000 |   1832815.00000 |            0.55 |
+mark_twain      | ag              |               0 |               5 |               1 |         1.27726 |   2340976.00000 |            0.43 |
+mark_twain      | ripgrep         |               0 |               5 |               1 |         0.44127 |    808766.00000 |            1.24 |
+mark_twain      | fgrep_mmap      |               0 |               5 |               1 |         0.40452 |    741414.00000 |            1.35 |
+mark_twain      | fgrep_stream    |               0 |               5 |               1 |         0.40558 |    743357.00000 |            1.35 |
+mark_twain      | fgrep_default   |               0 |               5 |               1 |         0.40442 |    741225.00000 |            1.35 |
 Complete.
 ```
 **MacOS**
@@ -88,8 +108,8 @@ Complete.
 
 ## Does fastgrep try to compete with grep and/or ripgrep? ##
 
-No. I think grep or ripgrep are feature complete and it is impossible to keep up with these commands in term of usability. fastgrep written as a library so I can use it in other projects. I only implemented some critical features and it will take a lot of time and effort to create something similar to grep or ripgrep.
+No. I think grep or ripgrep are feature complete and it is impossible to keep up with these commands in term of usability. fastgrep written as a library so I can use it in other projects. I only implemented some core features and it takes a lot of time and effort to create something similar to grep or ripgrep.
 
 ## Can I contribute to fastgrep? ##
 
-Any contribution is very welcome.
+Any contribution is very welcome. I use [google coding standard](https://google.github.io/styleguide/cppguide.html) for all fastgrep related repositories.
