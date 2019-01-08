@@ -134,15 +134,28 @@ int main(int argc, char *argv[]) {
 
     // Search for given pattern based on input parameters
     if (params.parameters.exact_match()) {
-        using Matcher = utils::ExactMatchAVX2;
-        if (params.parameters.use_memmap()) {
-            using Policy = typename fastgrep::SimplePolicy<Matcher>;
-            using Reader = ioutils::MMapReader<Policy>;
-            fgrep<Reader>(params);
+        if (!params.parameters.inverse_match()) {
+            using Matcher = utils::ExactMatcher;
+            if (params.parameters.use_memmap()) {
+                using Policy = typename fastgrep::SimplePolicy<Matcher>;
+                using Reader = ioutils::MMapReader<Policy>;
+                fgrep<Reader>(params);
+            } else {
+                using Policy = fastgrep::StreamPolicy<Matcher>;
+                params.parameters.stdin() ? fgrep_stdin<ioutils::StreamReader<Policy, BUFFER_SIZE>>(params)
+                                          : fgrep<ioutils::FileReader<Policy, BUFFER_SIZE>>(params);
+            }
         } else {
-            using Policy = fastgrep::StreamPolicy<Matcher>;
-            params.parameters.stdin() ? fgrep_stdin<ioutils::StreamReader<Policy, BUFFER_SIZE>>(params)
-                                      : fgrep<ioutils::FileReader<Policy, BUFFER_SIZE>>(params);
+            using Matcher = utils::ExactMatcherInv;
+            if (params.parameters.use_memmap()) {
+                using Policy = typename fastgrep::SimplePolicy<Matcher>;
+                using Reader = ioutils::MMapReader<Policy>;
+                fgrep<Reader>(params);
+            } else {
+                using Policy = fastgrep::StreamPolicy<Matcher>;
+                params.parameters.stdin() ? fgrep_stdin<ioutils::StreamReader<Policy, BUFFER_SIZE>>(params)
+                                          : fgrep<ioutils::FileReader<Policy, BUFFER_SIZE>>(params);
+            }
         }
     } else {
         if (!params.parameters.inverse_match()) {
