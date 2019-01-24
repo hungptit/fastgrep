@@ -7,9 +7,7 @@
 #include "utils/matchers.hpp"
 #include "utils/matchers_avx2.hpp"
 #include "utils/regex_matchers.hpp"
-#include <algorithm>
 #include <deque>
-#include <iostream>
 #include <string>
 #include <vector>
 
@@ -19,11 +17,15 @@
  * 2. Search for given pattern using file contents and display the search results.
  */
 namespace {
+    void copyright() {
+        fmt::print("{}\n", "fgrep version 0.1.0");
+        fmt::print("{}\n", "Hung Dang <hungptit@gmail.com>");
+    }
+
     struct InputParams {
         std::string pattern;                 // Grep pattern
         std::string path_pattern;            // Search path pattern
         std::vector<std::string> paths;      // Input files and folders
-        std::vector<std::string> extensions; // File extension want to search.
         fastgrep::Params parameters;         // Grep parameters
         void print() const {
             fmt::print("Pattern: {}\n", pattern);
@@ -62,14 +64,13 @@ namespace {
             clara::Opt(use_stream)["--stream"]("Get data from the input pipe/stream.") |
             clara::Opt(use_memmap)["--mmap"]("Get data from the input pipe/stream.") |
             clara::Opt(color)["-c"]["--color"]("Print out color text.") |
-            clara::Opt(linenum)["-l"]["--linenum"]("Display line number.") |
+            clara::Opt(linenum)["-n"]["--linenum"]("Display line number.") |
             clara::Opt(stdin)["-s"]["--stdin"]("Read data from the STDIN.") |
             clara::Opt(utf8)["--utf8"]("Support UTF8 (WIP).") |
             clara::Opt(utf16)["--utf16"]("Support UTF16 (WIP).") |
             clara::Opt(utf32)["--utf32"]("Support UTF32 (WIP).") |
-
-            clara::Opt(params.pattern, "pattern")["-e"]["--pattern"]("Search pattern.") |
-            clara::Opt(params.path_pattern, "path_pattern")["-e"]["--pattern"]("Search pattern.") |
+            clara::Opt(params.pattern, "pattern")["-e"]["--pattern"]["--regexp"]("Search pattern.") |
+            clara::Opt(params.path_pattern, "path_pattern")["-p"]["--path-regex"]("Path regex.") |
 
             // Required arguments.
             clara::Arg(params.paths, "paths")("Search paths");
@@ -84,6 +85,7 @@ namespace {
         if (help) {
             std::ostringstream oss;
             oss << cli;
+            copyright();
             fmt::print("{}", oss.str());
             exit(EXIT_SUCCESS);
         }

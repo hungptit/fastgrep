@@ -75,6 +75,11 @@ namespace fastgrep {
         }
 
         // Process text data in the linebuf.
+        void finalize() {
+            process_line(linebuf.data(), linebuf.size());
+            lines = 1;
+            pos = 0;
+        }
         void process_linebuf() { process_line(linebuf.data(), linebuf.size()); }
     };
 } // namespace fastgrep
