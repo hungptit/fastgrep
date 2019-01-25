@@ -22,6 +22,8 @@ message("-- Version: ${VERSION}")
 set(GENERIC_LIB_VERSION ${VERSION})
 string(SUBSTRING ${VERSION} 0 1 GENERIC_LIB_SOVERSION)
 
+option(UTILS_USE_AVX2 "Support AVX2" ON)
+
 include(CheckCXXCompilerFlag)
 include(AddCXXCompilerFlag)
 include(CXXFeatureCheck)
@@ -35,7 +37,12 @@ include(CXXFeatureCheck)
 set (CMAKE_BUILD_TYPE Release)
 add_cxx_compiler_flag(-O3)
 # add_cxx_compiler_flag(-march=native)
-add_cxx_compiler_flag(-mavx2)
+
+# Enable avx2 flag if specified.
+if (UTILS_USE_AVX2)
+  add_cxx_compiler_flag(-DUSE_AVX2)
+  add_cxx_compiler_flag(-mavx2)
+endif()
 
 
 add_cxx_compiler_flag(-std=c++14)
@@ -74,7 +81,6 @@ endif()
 
 add_cxx_compiler_flag(-DFMT_HEADER_ONLY)
 add_cxx_compiler_flag(-DCEREAL_RAPIDJSON_HAS_CXX11_RVALUE_REFS)
-add_cxx_compiler_flag(-DUSE_AVX2)
 add_cxx_compiler_flag(-static)
 
 ENABLE_TESTING()
