@@ -28,7 +28,7 @@ namespace fastgrep {
             fmt::print("\033[1;32m{0}:\033[1;39m{1}\033[0m\n", std::string(begin, end - begin), linenum);
         }
 
-        void print_plain_text(const char *begin, const char *end, const size_t linenum) {
+        void print_plain_text(const char *begin, const char *end, const size_t) {
             // TODO: using write v for this task.
             ::write(STDIN_FILENO, begin, end - begin);
         }

@@ -47,9 +47,9 @@ It is impossible to get a good benchmark for text searching tools since the perf
 ## Test data ##
 
 Test data and patterns are obtained from this [article](https://rust-leipzig.github.io/regex/2017/03/28/comparison-of-regex-engines/). Benchmark results show that:
-* fastgrep and ripgrep performance are comparable. The binary size of fastgrep is significantly larger than ripgrep so it might be slower for small text files.
-* fastgrep and grep are similar interm of raw performance. 
-* ag is the slower than grep, ripgrep, and fastgrep.
+* fastgrep and ripgrep performance are comparable. however, fgrep **is single threaded** and it might be significantly faster than ripgrep when searching for lines from very large text files.
+* fastgrep outperform grep in term of performance especially for complicated regular expression patterns. 
+* ag is the slower than grep, ripgrep, and fastgrep. *Beside that ag cannot handle files that are bigger than 2GB.*
 
 ## Experiment setup ##
 
@@ -104,11 +104,99 @@ mark_twain      | fgrep_default   |               0 |               5 |         
 Complete.
 ```
 
+# Usage examples #
+
+## Help message ##
+
+``` shell
+~/w/f/commands> ./fgrep -h
+fgrep version 0.1.0
+Hung Dang <hungptit@gmail.com>
+usage:
+  fgrep [<paths> ... ] options
+
+where options are:
+  -?, -h, --help                           display usage information
+  -v, --verbose                            Display verbose information
+  --exact-match                            Use exact matching algorithms.
+  --invert-match                           Print lines that do not match
+                                           given pattern.
+  -i, --ignore-case                        Perform case insensitive matching.
+                                           This is off by default.
+  -r, -R, --recursive                      Recursively search subdirectories
+                                           listed.
+  --mmap                                   Use mmap to read the file content
+                                           instead of read. This approach
+                                           does not work well for big files.
+  -c, --color                              Print out color text. This option
+                                           is off by default.
+  -n, --linenum                            Display line number. This option
+                                           is off by default.
+  -q, --quite                              Search a file until a match has
+                                           been found. This option is off by
+                                           default.
+  -s, --stdin                              Read data from the STDIN.
+  -e, -E, --pattern, --regexp <pattern>    Search pattern.
+  -p, --path-regex <path_pattern>          Path regex.
+```
+
+## Search for lines from files ##
+
+Below command will display all matched lines with file names.
+
+```
+ ~/w/f/commands> ./fgrep 'include.*matcher' fgrep.cpp
+fgrep.cpp:#include "utils/matchers.hpp"
+fgrep.cpp:#include "utils/regex_matchers.hpp"
+```
+
+Use **-i** to ignore the case
+
+``` shell
+ ~/w/f/commands> ./fgrep 'Include.*matcher' -i fgrep.cpp
+fgrep.cpp:#include "utils/matchers.hpp"
+fgrep.cpp:#include "utils/regex_matchers.hpp"
+```
+
+Use **invert-match** option to display lines that does not match specified regular expression.
+
+``` shell
+ ~/w/f/commands> ./fgrep 'include.*matcher' fgrep.cpp --invert-match
+fgrep.cpp:#include "clara.hpp"
+fgrep.cpp:#include "fmt/format.h"
+fgrep.cpp:#include "grep.hpp"
+fgrep.cpp:#include "ioutils/reader.hpp"
+fgrep.cpp:#include "ioutils/regex_store_policies.hpp"
+fgrep.cpp:#include "ioutils/search.hpp"
+fgrep.cpp:#include "ioutils/search_params.hpp"
+fgrep.cpp:#include "ioutils/simple_store_policy.hpp"
+fgrep.cpp:#include "ioutils/stream.hpp"
+fgrep.cpp:#include "params.hpp"
+fgrep.cpp:#include <deque>
+fgrep.cpp:#include <string>
+fgrep.cpp:#include <vector>
+fgrep.cpp:
+fgrep.cpp:/**
+fgrep.cpp: * The grep execution process has two steps:
+fgrep.cpp: * 1. Expand the search paths and get the list of search files.
+fgrep.cpp: * 2. Search for given pattern using file contents and display the search results.
+fgrep.cpp: */
+```
+
+## Search for lines from files that match specified path regex ##
+
+One fgrep feature that is not supported by any grep command is it allows users to specify the path patterns. Below command will search for lines in java source code in RocksDB repository. This feature is very useful when we want to grep through our desired files. 
+
+``` shell
+ ~/w/f/commands> ./fgrep 'zstd' ../../3p/src/rocksdb/ -p '[.]java$'
+../../3p/src/rocksdb//java/src/main/java/org/rocksdb/CompressionType.java:  ZSTD_COMPRESSION((byte)0x7, "zstd"),
+```
+
 # FAQs #
 
 ## Does fastgrep try to compete with grep and/or ripgrep? ##
 
-No. I think grep or ripgrep are feature complete and it is impossible to keep up with these commands in term of usability. fastgrep written as a library so I can use it in other projects. I only implemented some core features and it takes a lot of time and effort to create something similar to grep or ripgrep.
+**No**. I think grep or ripgrep are feature complete and it is impossible to keep up with these commands in term of usability. fastgrep written as a library so it can be used in other projects. I only implemented some core features and it takes a lot of time and effort to create something similar to grep or ripgrep.
 
 ## Can I contribute to fastgrep? ##
 
