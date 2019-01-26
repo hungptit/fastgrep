@@ -2,10 +2,13 @@
 #include "fmt/format.h"
 #include "grep.hpp"
 #include "ioutils/reader.hpp"
+#include "ioutils/regex_store_policies.hpp"
+#include "ioutils/search.hpp"
+#include "ioutils/search_params.hpp"
+#include "ioutils/simple_store_policy.hpp"
 #include "ioutils/stream.hpp"
 #include "params.hpp"
 #include "utils/matchers.hpp"
-// #include "utils/matchers_avx2.hpp"
 #include "utils/regex_matchers.hpp"
 #include <deque>
 #include <string>
@@ -23,10 +26,10 @@ namespace {
     }
 
     struct InputParams {
-        std::string pattern;                 // Grep pattern
-        std::string path_pattern;            // Search path pattern
-        std::vector<std::string> paths;      // Input files and folders
-        fastgrep::Params parameters;         // Grep parameters
+        std::string pattern;            // Grep pattern
+        std::string path_pattern;       // Search path pattern
+        std::vector<std::string> paths; // Input files and folders
+        fastgrep::Params parameters;    // Grep parameters
         void print() const {
             fmt::print("Pattern: {}\n", pattern);
             fmt::print("Path pattern: {}\n", pattern);
@@ -45,15 +48,15 @@ namespace {
         bool exact_match = false;   // Use exact matching algorithm.
         bool ignore_case = false;   // Ignore case.
         bool recursive = false;     // Recursively search subdirectories.
-        
+
         bool use_memmap = false; // Read the file content using memory mapped approach.
 
-        bool stdin = false;      // Read data from STDIN.
-        bool color = false;      // Display color text.
-        bool verbose = false;    // Display verbose information.
+        bool stdin = false;   // Read data from STDIN.
+        bool color = false;   // Display color text.
+        bool verbose = false; // Display verbose information.
 
         // TODO: Support Unicode
-        bool quite = false;     // Search a file until a match has been found.
+        bool quite = false; // Search a file until a match has been found.
         bool utf8 = false;  // Support UTF8.
         bool utf16 = false; // Support UTF16.
         bool utf32 = false; // Support UTF32.
@@ -62,12 +65,15 @@ namespace {
             clara::Help(help) | clara::Opt(verbose)["-v"]["--verbose"]("Display verbose information") |
             clara::Opt(exact_match)["--exact-match"]("Use exact matching algorithms.") |
             clara::Opt(inverse_match)["--invert-match"]("Print lines that do not match given pattern.") |
-            clara::Opt(ignore_case)["-i"]["--ignore-case"]("Perform case insensitive matching. This is off by default.") |
+            clara::Opt(ignore_case)["-i"]["--ignore-case"](
+                "Perform case insensitive matching. This is off by default.") |
             clara::Opt(recursive)["-r"]["-R"]["--recursive"]("Recursively search subdirectories listed.") |
-            clara::Opt(use_memmap)["--mmap"]("Use mmap to read the file content instead of read. This approach does not work well for big files.") |
+            clara::Opt(use_memmap)["--mmap"]("Use mmap to read the file content instead of read. This "
+                                             "approach does not work well for big files.") |
             clara::Opt(color)["-c"]["--color"]("Print out color text. This option is off by default.") |
             clara::Opt(linenum)["-n"]["--linenum"]("Display line number. This option is off by default.") |
-            clara::Opt(quite)["-q"]["--quite"]("Search a file until a match has been found. This option is off by default.") |
+            clara::Opt(quite)["-q"]["--quite"](
+                "Search a file until a match has been found. This option is off by default.") |
             clara::Opt(stdin)["-s"]["--stdin"]("Read data from the STDIN.") |
             clara::Opt(utf8)["--utf8"]("Support UTF8 (WIP).") |
             clara::Opt(utf16)["--utf16"]("Support UTF16 (WIP).") |
@@ -99,7 +105,8 @@ namespace {
         params.parameters.info = verbose * fastgrep::VERBOSE | color * fastgrep::COLOR |
                                  linenum * fastgrep::LINENUM | utf8 * fastgrep::UTF8 |
                                  use_memmap * fastgrep::USE_MEMMAP | exact_match * fastgrep::EXACT_MATCH |
-            inverse_match * fastgrep::INVERSE_MATCH | stdin * fastgrep::STDIN | recursive * fastgrep::RECURSIVE;
+                                 inverse_match * fastgrep::INVERSE_MATCH | stdin * fastgrep::STDIN |
+                                 recursive * fastgrep::RECURSIVE;
 
         // If users do not specify the search pattern then the first elements of paths is the search
         // pattern.
@@ -120,8 +127,35 @@ namespace {
 
 // TODO: Find all files in the given paths.
 template <typename T> void fgrep(const InputParams &params) {
-    T grep(params.pattern, params.parameters);
-    for (auto afile : params.paths) { grep(afile.data()); }
+
+    // Find all files that need to search.
+    ioutils::search::Params find_params;
+    find_params.flag |= ioutils::search::IGNORE_SYMLINK | ioutils::search::IGNORE_DIR;
+    find_params.path_regex = params.path_pattern;
+
+    if (find_params.path_regex.empty()) {
+        using Policy = ioutils::StorePolicy;
+        using Search = typename ioutils::FileSearch<Policy>;
+        Search search(find_params);
+        search.dfs(params.paths);
+        T grep(params.pattern, params.parameters);
+        auto const &all_paths = search.get_paths();
+        for (auto const &afile : all_paths) {
+            grep(afile.data());
+        }
+    } else {
+        using Matcher = utils::hyperscan::RegexMatcher;
+        using Policy = ioutils::RegexStorePolicy<Matcher>;
+        using Search = typename ioutils::FileSearch<Policy>;
+        Search search(find_params);
+        search.dfs(params.paths);
+        T grep(params.pattern, params.parameters);
+        auto const &all_paths = search.get_paths();
+        for (auto const &afile : all_paths) {
+            grep(afile.data());
+        }
+    }
+    // Grep all found files.
 }
 
 // grep for desired lines from STDIN

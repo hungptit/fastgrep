@@ -1,16 +1,15 @@
 #pragma once
 
 #include "fmt/format.h"
-#include <cstring>
-#include <string>
-#include "utils/memchr.hpp"
 #include "simple_policy.hpp"
 #include "stream.hpp"
+#include "utils/memchr.hpp"
+#include <cstring>
+#include <string>
 
 namespace fastgrep {
 
     // This policy assumes that lines are all inside the given buffer.
-
     namespace experiments {
         template <typename Matcher> class GrepPolicy {
           public:

@@ -38,6 +38,7 @@ namespace fastgrep {
             pos = 0;
         }
 
+      protected:
         Matcher matcher;
         size_t lines = 1;
         size_t pos = 0;
@@ -45,8 +46,13 @@ namespace fastgrep {
         Console console;
         bool linenum;
         bool color;
+        const char *file;
 
-      protected:
+        // Set the file name so we can display our results better.
+        void set_filename(const char *fname) {
+            file = fname;
+        }
+
         virtual void process_line(const char *begin, const size_t len) {
             if (matcher.is_matched(begin, len)) {
                 const size_t buflen = len - 1;

@@ -17,9 +17,6 @@ namespace fastgrep {
             : matcher(patt, params.regex_mode), lines(1), pos(0), linebuf(), console(),
               color(params.color()), linenum(params.linenum()) {}
 
-        // We do need to process the last line at the end.
-        ~StreamPolicy() { process_linebuf(); }
-
         void process(const char *begin, const size_t len) {
             const char *start = begin;
             const char *end = begin + len;
@@ -29,7 +26,7 @@ namespace fastgrep {
                     process_line(start, ptr - start + 1);
                 } else {
                     linebuf.append(start, ptr - start + 1);
-                    process_linebuf();
+                    process_line(linebuf.data(), linebuf.size());
                     linebuf.clear();
                 }
 
@@ -46,6 +43,7 @@ namespace fastgrep {
             pos += len;
         }
 
+      protected:
         Matcher matcher;
         size_t lines = 1;
         size_t pos = 0;
@@ -53,33 +51,42 @@ namespace fastgrep {
         Console console;
         bool color = false;
         bool linenum = false;
+        const char *file = nullptr;
 
-      protected:
         virtual void process_line(const char *begin, const size_t len) {
             if (matcher.is_matched(begin, len)) {
                 const size_t buflen = len - 1;
                 if (!linenum) {
                     if (!color) {
+                        if (file) { fmt::print("{}:", file); }
                         console.print_plain_text(begin, begin + buflen);
                     } else {
+                        if (file) { fmt::print("\033[1;34m{}:", file); }
                         console.print_color_text(begin, begin + buflen);
                     }
                 } else {
                     if (!color) {
+                        if (file) { fmt::print("{}:", file); }
                         console.print_plain_text(begin, begin + buflen, lines);
                     } else {
+                        if (file) { fmt::print("\033[1;34m{}:", file); }
                         console.print_color_text(begin, begin + buflen, lines);
                     }
                 }
             }
         }
 
+        // Set the file name so we can display our results better.
+        void set_filename(const char *fname) {
+            file = fname;
+        }
+
         // Process text data in the linebuf.
         void finalize() {
             process_line(linebuf.data(), linebuf.size());
+            linebuf.clear();
             lines = 1;
             pos = 0;
         }
-        void process_linebuf() { process_line(linebuf.data(), linebuf.size()); }
     };
 } // namespace fastgrep
