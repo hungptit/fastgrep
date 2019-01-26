@@ -194,6 +194,10 @@ One fgrep feature that is not supported by any grep command is it allows users t
 
 # FAQs #
 
+## Where can I find the binary for fgrep ##
+
+All fgrep binary for Linux and MacOS can be found from this [github repository](https://github.com/hungptit/tools.git).
+
 ## Does fastgrep try to compete with grep and/or ripgrep? ##
 
 **No**. I think grep or ripgrep are feature complete and it is impossible to keep up with these commands in term of usability. fastgrep written as a library so it can be used in other projects. I only implemented some core features and it takes a lot of time and effort to create something similar to grep or ripgrep.
