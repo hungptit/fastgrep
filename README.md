@@ -47,7 +47,7 @@ It is impossible to get a good benchmark for text searching tools since the perf
 ## Test data ##
 
 Test data and patterns are obtained from this [article](https://rust-leipzig.github.io/regex/2017/03/28/comparison-of-regex-engines/). Benchmark results show that:
-* fastgrep and ripgrep performance are comparable. however, fgrep **is single threaded** and it might be significantly faster than ripgrep when searching for lines from very large text files.
+* fastgrep and ripgrep performance are comparable.
 * fastgrep outperform grep in term of performance especially for complicated regular expression patterns. 
 * ag is the slower than grep, ripgrep, and fastgrep. *Beside that ag cannot handle files that are bigger than 2GB.*
 
