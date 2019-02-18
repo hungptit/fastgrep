@@ -106,6 +106,10 @@ Complete.
 
 # Usage examples #
 
+## How to use fgrep ##
+
+Precompiled fgrep commands for MacOS, Linux, and Window Linux Subsystem can be downloaded from this [github repository](https://github.com/hungptit/tools.git).
+
 ## Help message ##
 
 ``` shell
