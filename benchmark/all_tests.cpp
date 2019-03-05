@@ -57,6 +57,10 @@ BENCHMARK(mark_twain, ripgrep, number_of_samples, number_of_operations) {
     run_all_tests(datafile, "rg", patterns);
 }
 
+BENCHMARK(mark_twain, ucg, number_of_samples, number_of_operations) {
+    run_all_tests(datafile, "ucg", patterns);
+}
+
 BENCHMARK(mark_twain, fgrep_mmap, number_of_samples, number_of_operations) {
     run_all_tests(datafile, "../commands/fgrep --mmap ", patterns);
 }
