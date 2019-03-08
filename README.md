@@ -169,7 +169,7 @@ Below benchmark results are collected with
 * rg 0.10.0
 * fgrep master branch.
 
-**Note: The benchmark results aer collected in a big and busy development server with 88 cores and all files are stored in a network drive.**
+**Note: The benchmark results are collected in a big and busy development server with 88 cores and network storage.**
 
 #### Searching for text pattern from a Mark Twain's book ####
 
