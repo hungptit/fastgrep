@@ -127,17 +127,16 @@ namespace {
 
 // TODO: Find all files in the given paths.
 template <typename T> void fgrep(const InputParams &params) {
-
     // Find all files that need to search.
     ioutils::search::Params find_params;
-    find_params.flag |= ioutils::search::IGNORE_SYMLINK | ioutils::search::IGNORE_DIR;
-    find_params.path_regex = params.path_pattern;
+    find_params.flags |= ioutils::search::IGNORE_SYMLINK | ioutils::search::IGNORE_DIR;
+    find_params.regex = params.path_pattern;
 
-    if (find_params.path_regex.empty()) {
+    if (find_params.regex.empty()) {
         using Policy = ioutils::StorePolicy;
         using Search = typename ioutils::FileSearch<Policy>;
         Search search(find_params);
-        search.dfs(params.paths);
+        search.traverse(params.paths);
         T grep(params.pattern, params.parameters);
         auto const &all_paths = search.get_paths();
         for (auto const &afile : all_paths) {
@@ -148,7 +147,7 @@ template <typename T> void fgrep(const InputParams &params) {
         using Policy = ioutils::RegexStorePolicy<Matcher>;
         using Search = typename ioutils::FileSearch<Policy>;
         Search search(find_params);
-        search.dfs(params.paths);
+        search.traverse(params.paths);
         T grep(params.pattern, params.parameters);
         auto const &all_paths = search.get_paths();
         for (auto const &afile : all_paths) {
