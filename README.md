@@ -9,15 +9,15 @@ fgrep is modular and it can be reused in other projects. All core algorithms are
 
 The fgrep command is fast because of many reasons and below are key factors
 
-## High-performance regular rexpression matching engine ##
+## Use high-performance regular rexpression matching engine ##
 
 fgrep uses [hyperscan](https://github.com/intel/hyperscan) as a regular expression matching engine. Our performance benchmarks have shown that [hyperscan](https://github.com/intel/hyperscan) is 20x or more faster than that of std::regex.
 
-## High-performance exact text matching algorithm ##
+## Use high-performance exact text matching algorithm ##
 
 fgrep uses SSE2 and AVX2 optimized algorithms for exact text matching. Our SSE2 and AVX2 algorithms are forked from [this repository](https://github.com/WojciechMula/sse4-strstr). Our exact matching algorithms is 2-4x faster than the standard string find algorithm.
 
-## Efficient file I/O ##
+## Use efficient file I/O algorithms ##
 
 fgrep uses very fast algorithms for reading data from file.
 
@@ -27,7 +27,7 @@ All core algorithms are implemented using [Policy Based Design](https://en.wikip
 
 # Benchmark results #
 
-It is impossible to get a good benchmark for text searching tools since the performance of each benchmarked command is relied on search patterns. We use all patterns mentioned in this [link](https://rust-leipzig.github.io/regex/2017/03/28/comparison-of-regex-engines/) and their test data. All benchmarks can be found from the [benchmark folder](https://github.com/hungptit/fastgrep/tree/master/benchmark) and our benchmark results are consistent in all test platforms such as Gentoo kernel 4.17, CentOS 6.x, and macOS.
+It is impossible to get a good benchmark for text searching tools since the performance of each benchmarked command is relied on search patterns. We use all patterns mentioned in this [link](https://rust-leipzig.github.io/regex/2017/03/28/comparison-of-regex-engines/) and their test data. All benchmarks can be found from the [benchmark folder](https://github.com/hungptit/fastgrep/tree/master/benchmark) and the benchmark results are consistent in all test platforms such as Gentoo kernel 4.17, CentOS 6.x, and macOS.
 
 ## Test environments ##
 **Linux**
@@ -41,14 +41,14 @@ It is impossible to get a good benchmark for text searching tools since the perf
 * CPU: 2.2 GHz Intel Core i7
 * System memory: 16 GBytes
 * Hard drive: SSD
-* OS: Darwin Kernel Version 16.7.0
+* OS: Darwin Kernel Version 18.2.0
 * Compiler: Apple LLVM version 9.0.0 (clang-900.0.39.2)
 
 ## Test data ##
 
 Test data and patterns are obtained from this [article](https://rust-leipzig.github.io/regex/2017/03/28/comparison-of-regex-engines/). Benchmark results show that:
 * fastgrep and ripgrep performance are comparable.
-* fastgrep outperform grep in term of performance especially for complicated regular expression patterns. 
+* fastgrep outperform grep in term of performance especially for complicated regular expression patterns.
 * ag is the slower than grep, ripgrep, and fastgrep. *Beside that ag cannot handle files that are bigger than 2GB.*
 
 ## Experiment setup ##
@@ -57,50 +57,161 @@ Test data and patterns are obtained from this [article](https://rust-leipzig.git
 * The output of all commands are redirected to a temporary file.
 
 ## Results ##
-**Linux**
 
-Below benchmark results are collected with 
+### MacOS ###
+
+Below benchmark results are collected with:
 * GNU grep 3.1
 * ag 2.2.0
 * rg 0.10.0
 * fgrep master branch.
 
-```
-./all_tests
-Celero
-Timer resolution: 0.001000 us
------------------------------------------------------------------------------------------------------------------------------------------------
-     Group      |   Experiment    |   Prob. Space   |     Samples     |   Iterations    |    Baseline     |  us/Iteration   | Iterations/sec  |
------------------------------------------------------------------------------------------------------------------------------------------------
-mark_twain      | grep            |               0 |               5 |               1 |         1.00000 |   1832815.00000 |            0.55 |
-mark_twain      | ag              |               0 |               5 |               1 |         1.27726 |   2340976.00000 |            0.43 |
-mark_twain      | ripgrep         |               0 |               5 |               1 |         0.44127 |    808766.00000 |            1.24 |
-mark_twain      | fgrep_mmap      |               0 |               5 |               1 |         0.40452 |    741414.00000 |            1.35 |
-mark_twain      | fgrep_stream    |               0 |               5 |               1 |         0.40558 |    743357.00000 |            1.35 |
-mark_twain      | fgrep_default   |               0 |               5 |               1 |         0.40442 |    741225.00000 |            1.35 |
-Complete.
-```
-**MacOS**
+**Note**
 
-Below benchmark results are collected with 
-* GNU grep 3.1
-* ag 2.2.0
-* rg 0.10.0
-* fgrep master branch.
+All benchmark source code can be found in the **benchmark** folder.
+
+
+#### Grep for a set of patterns from a book ####
+
+**Test patterns**
+
+``` c++
+const std::vector<std::string> patterns = {
+    "Twain",
+    "(?i)Twain",
+    "[a-z]shing",
+    "Huck[a-zA-Z]+|Saw[a-zA-Z]+",
+    "\b\\w+nn\b",
+    "[a-q][^u-z]{13}x",
+    "Tom|Sawyer|Huckleberry|Finn",
+    "(?i)Tom|Sawyer|Huckleberry|Finn",
+    ".{0,2}(Tom|Sawyer|Huckleberry|Finn)",
+    ".{2,4}(Tom|Sawyer|Huckleberry|Finn)",
+    "Tom.{10,25}river|river.{10,25}Tom",
+    "[a-zA-Z]+ing",
+    "\\s[a-zA-Z]{0,12}ing\\s",
+    "([A-Za-z]awyer|[A-Za-z]inn)\\s",
+    // "[\\"'][^\\"']{0,30}[?!\\.][\"']",
+    "\\p{Sm}",
+};
+```
+
+**Benchmark results**
+
+Below is the total runtime for above regular expression patterns. We can easily see that:
+* ag is the slowest command.
+* grep and ucg performance is very similar.
+* ripgrep performance is about 2.5x faster than ag and about 50% faster than both grep and ucg.
+* fgrep with the default option is the clear winer.
 
 ``` shell
-./all_tests
+./all_tests -g mark_twain
 Celero
 Timer resolution: 0.001000 us
 -----------------------------------------------------------------------------------------------------------------------------------------------
      Group      |   Experiment    |   Prob. Space   |     Samples     |   Iterations    |    Baseline     |  us/Iteration   | Iterations/sec  |
 -----------------------------------------------------------------------------------------------------------------------------------------------
-mark_twain      | grep_brew       |               0 |               5 |               1 |         1.00000 |   1290531.00000 |            0.77 |
-mark_twain      | ag              |               0 |               5 |               1 |         1.69616 |   2188950.00000 |            0.46 |
-mark_twain      | ripgrep         |               0 |               5 |               1 |         0.56342 |    727106.00000 |            1.38 |
-mark_twain      | fgrep_mmap      |               0 |               5 |               1 |         0.48225 |    622353.00000 |            1.61 |
-mark_twain      | fgrep_stream    |               0 |               5 |               1 |         0.48798 |    629750.00000 |            1.59 |
-mark_twain      | fgrep_default   |               0 |               5 |               1 |         0.48698 |    628463.00000 |            1.59 |
+mark_twain      | grep            |               0 |               5 |               1 |         1.00000 |   1315626.00000 |            0.76 |
+mark_twain      | ag              |               0 |               5 |               1 |         1.74137 |   2290990.00000 |            0.44 |
+mark_twain      | ripgrep         |               0 |               5 |               1 |         0.68297 |    898539.00000 |            1.11 |
+mark_twain      | ucg             |               0 |               5 |               1 |         0.96918 |   1275074.00000 |            0.78 |
+mark_twain      | fgrep_mmap      |               0 |               5 |               1 |         0.54012 |    710598.00000 |            1.41 |
+mark_twain      | fgrep_default   |               0 |               5 |               1 |         0.49598 |    652528.00000 |            1.53 |
+Complete.
+```
+
+#### Search for a **coroutine.\*Executor** pattern in boost source code ####
+*Note: This test is very simple so it might be biased.*
+
+This benchmark will evaluate the performance of all commands by searching for all matched line in C++ files. The performance benchmark results show that:
+1. ripgrep is the fastest command, however, it is not significantly faster than GNU grep, fgrep, and ag.
+2. ucg is the slowest command which is 40% slower than ripgrep.
+
+If we take a detail look at how these commands utilize the system resource we can easily see that:
+1. grep use the least CPU resource and the second is fgrep.
+2. ucg is not utilized CPU resource efficiently.
+
+``` shell
+./all_tests -g boost_source
+Celero
+Timer resolution: 0.001000 us
+-----------------------------------------------------------------------------------------------------------------------------------------------
+     Group      |   Experiment    |   Prob. Space   |     Samples     |   Iterations    |    Baseline     |  us/Iteration   | Iterations/sec  |
+-----------------------------------------------------------------------------------------------------------------------------------------------
+boost_source    | grep            |               0 |               5 |               1 |         1.00000 |   1700755.00000 |            0.59 |
+boost_source    | ag              |               0 |               5 |               1 |         1.07064 |   1820904.00000 |            0.55 |
+boost_source    | ripgrep         |               0 |               5 |               1 |         0.94198 |   1602084.00000 |            0.62 |
+boost_source    | ucg             |               0 |               5 |               1 |         1.39669 |   2375433.00000 |            0.42 |
+boost_source    | fgrep           |               0 |               5 |               1 |         1.02458 |   1742567.00000 |            0.57 |
+Complete.
+```
+
+``` shell
+hdang@ATH020224 ~/w/f/benchmark> time rg 'coroutine.*Executor' ../../3p/src/boost/  -Lun -t cpp --color never > /dev/null
+        1.87 real         0.89 user         6.55 sys
+hdang@ATH020224 ~/w/f/benchmark> time ggrep  -En -r --include='*.cpp' --include='*.hpp' 'coroutine.*Executor' ../../3p/src/boost/ > /dev/null
+        1.94 real         0.54 user         1.34 sys
+hdang@ATH020224 ~/w/f/benchmark> time ag --cpp 'coroutine.*Executor' ../../3p/src/boost/ > /dev/null
+        2.02 real         0.71 user         7.53 sys
+hdang@ATH020224 ~/w/f/benchmark> time ucg --noenv --cpp 'coroutine.*Executor'  ../../3p/src/boost/ > /dev/null
+        3.03 real         0.76 user        11.76 sys
+hdang@ATH020224 ~/w/f/benchmark> time fgrep -c -n -p '[.](cpp|hpp)' 'coroutine.*Executor' ../../3p/src/boost/ > /dev/null
+        2.02 real         0.43 user         1.54 sys
+```
+
+**Note: Both ag and ucg cannot be used as a general purpose text searching tool since these commands cannot handle very large files i.e several GB of text data.**
+
+### Linux ###
+
+Below benchmark results are collected with
+* GNU grep 3.1
+* ag 2.2.0
+* rg 0.10.0
+* fgrep master branch.
+
+**Note: The benchmark results are collected in a big and busy development server with 88 cores and network storage.**
+
+#### Searching for text pattern from a Mark Twain's book ####
+
+This benchmark only measures the performance of each command using a single thread. We can easily see that 
+* fgrep is the fastest command, however, the gap between fgrep and ripgrep is only about 10%.
+* ag is the slowest command and I cannot include ucg in our benchmark because the Linux server has the old version of glibc and gcc compiler. 
+
+``` shell
+./all_tests -g mark_twain
+Celero
+Timer resolution: 0.001000 us
+-----------------------------------------------------------------------------------------------------------------------------------------------
+     Group      |   Experiment    |   Prob. Space   |     Samples     |   Iterations    |    Baseline     |  us/Iteration   | Iterations/sec  |
+-----------------------------------------------------------------------------------------------------------------------------------------------
+mark_twain      | grep            |               0 |               5 |               1 |         1.00000 |   1923343.00000 |            0.52 |
+mark_twain      | ag              |               0 |               5 |               1 |         1.19866 |   2305431.00000 |            0.43 |
+mark_twain      | ripgrep         |               0 |               5 |               1 |         0.44732 |    860345.00000 |            1.16 |
+mark_twain      | fgrep_mmap      |               0 |               5 |               1 |         0.41027 |    789086.00000 |            1.27 |
+mark_twain      | fgrep_default   |               0 |               5 |               1 |         0.40409 |    777208.00000 |            1.29 |
+Complete.
+```
+
+#### Search for lines from boost source code ####
+
+The performance benchmark results show that:
+* ripgrep is the fastest command.
+* grep and fgrep have similar performance and they are 7x slower that ripgrep and this is something that we need to look into. Below are possible reasons:
+  * Both fgrep and grep are single thread command.
+  * Do not use memory map to read the file content. This might not work well on a busy server with the network storage.
+
+```
+./all_tests -g boost_source
+Celero
+Timer resolution: 0.001000 us
+-----------------------------------------------------------------------------------------------------------------------------------------------
+     Group      |   Experiment    |   Prob. Space   |     Samples     |   Iterations    |    Baseline     |  us/Iteration   | Iterations/sec  |
+-----------------------------------------------------------------------------------------------------------------------------------------------
+boost_source    | grep            |               0 |               5 |               1 |         1.00000 |   7929887.00000 |            0.13 |
+boost_source    | ag              |               0 |               5 |               1 |         0.24409 |   1935630.00000 |            0.52 |
+boost_source    | ripgrep         |               0 |               5 |               1 |         0.13643 |   1081891.00000 |            0.92 |
+boost_source    | fgrep_mmap      |               0 |               5 |               1 |         0.90445 |   7172150.00000 |            0.14 |
+boost_source    | fgrep_default   |               0 |               5 |               1 |         0.85858 |   6808481.00000 |            0.15 |
 Complete.
 ```
 
@@ -189,7 +300,7 @@ fgrep.cpp: */
 
 ## Search for lines from files that match specified path regex ##
 
-One fgrep feature that is not supported by any grep command is it allows users to specify the path patterns. Below command will search for lines in java source code in RocksDB repository. This feature is very useful when we want to grep through our desired files. 
+One fgrep feature that is not supported by any grep command is it allows users to specify the path patterns. Below command will search for lines in java source code in RocksDB repository. This feature is very useful when we want to grep through our desired files.
 
 ``` shell
  ~/w/f/commands> ./fgrep 'zstd' ../../3p/src/rocksdb/ -p '[.]java$'
@@ -265,7 +376,7 @@ All fgrep binary for Linux and MacOS can be found from this [github repository](
 
 ## Does fastgrep try to compete with grep and/or ripgrep? ##
 
-**No**. I think grep or ripgrep are feature complete and it is impossible to keep up with these commands in term of usability. fastgrep written as a library so it can be used in other projects. I only implemented some core features and it takes a lot of time and effort to create something similar to grep or ripgrep.
+**No**. I think grep or ripgrep are feature complete and it is impossible to keep up with these commands in term of usability. fastgrep written as a library so it can be used in other projects. I only implemented some core features and it takes a lot of time and effort to create something similar to grep or ripgrep commands.
 
 ## Can I contribute to fastgrep? ##
 

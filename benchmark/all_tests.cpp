@@ -33,8 +33,7 @@ const std::vector<std::string> patterns = {
 };
 
 namespace {
-    void run_a_test(const std::string datafile, const std::string &command,
-                    const std::string &pattern) {
+    void run_a_test(const std::string datafile, const std::string &command, const std::string &pattern) {
         std::string cmd = command + " '" + pattern + "' " + datafile + " > output.log";
         system(cmd.c_str());
     }
@@ -42,25 +41,58 @@ namespace {
                        const std::vector<std::string> &patterns) {
         for (auto const &item : patterns) { run_a_test(datafile, command, item); }
     }
+
+    void test_with_boost_source_code(const std::string command, const std::string options,
+                                     const std::string &path) {
+        const std::string buffer = command + options + path + " > output.log";
+        // fmt::print("{}\n", buffer);
+        system(buffer.data());
+    }
 } // namespace
 
 BASELINE(mark_twain, grep, number_of_samples, number_of_operations) {
     run_all_tests(datafile, "grep -E", patterns);
 }
 
-
 BENCHMARK(mark_twain, ag, number_of_samples, number_of_operations) {
     run_all_tests(datafile, "ag", patterns);
 }
 
 BENCHMARK(mark_twain, ripgrep, number_of_samples, number_of_operations) {
-    run_all_tests(datafile, "rg", patterns);
+    run_all_tests(datafile, "rg  -Lun ", patterns);
 }
 
+// BENCHMARK(mark_twain, ucg, number_of_samples, number_of_operations) {
+//     run_all_tests(datafile, "ucg", patterns);
+// }
+
 BENCHMARK(mark_twain, fgrep_mmap, number_of_samples, number_of_operations) {
-    run_all_tests(datafile, "../commands/fgrep --mmap ", patterns);
+    run_all_tests(datafile, "../commands/fgrep --mmap -n ", patterns);
 }
 
 BENCHMARK(mark_twain, fgrep_default, number_of_samples, number_of_operations) {
-    run_all_tests(datafile, "../commands/fgrep ", patterns);
+    run_all_tests(datafile, "../commands/fgrep -n ", patterns);
+}
+
+const std::string boost_src = "../../3p/src/boost/";
+const std::string pattern = " 'coroutine.*Executor' ";
+
+BASELINE(boost_source, grep, number_of_samples, number_of_operations) {
+    test_with_boost_source_code("grep  -En -r --include='*.cpp' --include='*.hpp' ", pattern, boost_src);
+}
+
+BENCHMARK(boost_source, ag, number_of_samples, number_of_operations) {
+    test_with_boost_source_code("ag --cpp ", pattern, boost_src);
+}
+
+BENCHMARK(boost_source, ripgrep, number_of_samples, number_of_operations) {
+    test_with_boost_source_code("rg -Lun -t cpp --color never ", pattern, boost_src);
+}
+
+// BENCHMARK(boost_source, ucg, number_of_samples, number_of_operations) {
+//     test_with_boost_source_code("ucg --noenv --cpp ", pattern, boost_src);
+// }
+
+BENCHMARK(boost_source, fgrep, number_of_samples, number_of_operations) {
+    test_with_boost_source_code("../commands/fgrep -c -n -p '[.](cpp|hpp)' ", pattern, boost_src);
 }
