@@ -45,7 +45,7 @@ namespace {
 } // namespace
 
 BASELINE(mark_twain, grep, number_of_samples, number_of_operations) {
-    run_all_tests(datafile, "ggrep -E", patterns);
+    run_all_tests(datafile, "grep -E", patterns);
 }
 
 

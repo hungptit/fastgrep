@@ -75,7 +75,7 @@ ENABLE_TESTING()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Libraries used by rocksdb
-set(LIB_CELERO "${EXTERNAL_DIR}/lib/libcelero.a")
+set(LIB_CELERO "${EXTERNAL_DIR}/lib/libcelero.so")
 
 # This option make sure that we use the local boost version. Note that if the
 # system boost is installed then CMake might use that boost version.
