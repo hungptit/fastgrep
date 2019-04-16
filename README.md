@@ -1,9 +1,9 @@
 # Introduction
 The fgrep utility searches any given input files for lines that match one or more patterns. fgrep is written using modern C++ and is built on top of [ioutils](https://github.com/hungptit/ioutils "A blazing fast fast file I/O library"), [utils](https://github.com/hungptit/utils "A very fast string related functionality written in modern C++"), [fmt](https://github.com/fmtlib/fmt "A modern formating library"), [cereal](https://github.com/USCiLab/cereal "A C++11 library for serialization"), [hyperscan](https://github.com/intel/hyperscan "High-performance regular expression matching library."), and [boost libraries](https://www.boost.org/ "boost.org"). Our benchmarks and unit tests are written using Google [benchmark](https://github.com/google/benchmark "A microbenchmark support library"), [Celero](https://github.com/DigitalInBlue/Celero "C++ Benchmark Authoring Library/Framework"), and [Catch2](https://github.com/catchorg/Catch2 "A modern, C++-native, header-only, test framework for unit-tests, TDD and BDD").
 
-# What is the different between fgrep and grep or ripgrep #
+# What is the different between fgrep and GNU grep#
 
-fgrep is modular and it can be reused in other projects. All core algorithms are templatized so we can have flexible and reusable code without sacrificing the performance.
+Both fgrep is modular and it can be reused in other projects. All core algorithms are templatized so we can have flexible and reusable code without sacrificing the performance.
 
 # Why fgrep is fast? #
 
@@ -111,12 +111,13 @@ Timer resolution: 0.001000 us
 -----------------------------------------------------------------------------------------------------------------------------------------------
      Group      |   Experiment    |   Prob. Space   |     Samples     |   Iterations    |    Baseline     |  us/Iteration   | Iterations/sec  |
 -----------------------------------------------------------------------------------------------------------------------------------------------
-mark_twain      | grep            |               0 |               5 |               1 |         1.00000 |   1315626.00000 |            0.76 |
-mark_twain      | ag              |               0 |               5 |               1 |         1.74137 |   2290990.00000 |            0.44 |
-mark_twain      | ripgrep         |               0 |               5 |               1 |         0.68297 |    898539.00000 |            1.11 |
-mark_twain      | ucg             |               0 |               5 |               1 |         0.96918 |   1275074.00000 |            0.78 |
-mark_twain      | fgrep_mmap      |               0 |               5 |               1 |         0.54012 |    710598.00000 |            1.41 |
-mark_twain      | fgrep_default   |               0 |               5 |               1 |         0.49598 |    652528.00000 |            1.53 |
+mark_twain      | grep            |               0 |               5 |               1 |         1.00000 |   1379512.00000 |            0.72 |
+mark_twain      | ag              |               0 |               5 |               1 |         1.94295 |   2680329.00000 |            0.37 |
+mark_twain      | ripgrep         |               0 |               5 |               1 |         0.78864 |   1087935.00000 |            0.92 |
+mark_twain      | ripgrep_mmap    |               0 |               5 |               1 |         0.77899 |   1074622.00000 |            0.93 |
+mark_twain      | ucg             |               0 |               5 |               1 |         1.02980 |   1420624.00000 |            0.70 |
+mark_twain      | fgrep_mmap      |               0 |               5 |               1 |         0.65655 |    905720.00000 |            1.10 |
+mark_twain      | fgrep_default   |               0 |               5 |               1 |         0.60751 |    838069.00000 |            1.19 |
 Complete.
 ```
 
@@ -132,36 +133,40 @@ If we take a detail look at how these commands utilize the system resource we ca
 2. ucg is not utilized CPU resource efficiently.
 
 ``` shell
-./all_tests -g boost_source
+ATH020224:benchmark hdang$ ./all_tests -g boost_source
 Celero
 Timer resolution: 0.001000 us
 -----------------------------------------------------------------------------------------------------------------------------------------------
      Group      |   Experiment    |   Prob. Space   |     Samples     |   Iterations    |    Baseline     |  us/Iteration   | Iterations/sec  |
 -----------------------------------------------------------------------------------------------------------------------------------------------
-boost_source    | grep            |               0 |               5 |               1 |         1.00000 |   1700755.00000 |            0.59 |
-boost_source    | ag              |               0 |               5 |               1 |         1.07064 |   1820904.00000 |            0.55 |
-boost_source    | ripgrep         |               0 |               5 |               1 |         0.94198 |   1602084.00000 |            0.62 |
-boost_source    | ucg             |               0 |               5 |               1 |         1.39669 |   2375433.00000 |            0.42 |
-boost_source    | fgrep           |               0 |               5 |               1 |         1.02458 |   1742567.00000 |            0.57 |
+boost_source    | grep            |               0 |               5 |               1 |         1.00000 |   1648048.00000 |            0.61 |
+boost_source    | ag              |               0 |               5 |               1 |         1.20629 |   1988021.00000 |            0.50 |
+boost_source    | ripgrep         |               0 |               5 |               1 |         0.68116 |   1122578.00000 |            0.89 |
+boost_source    | ripgrep_mmap    |               0 |               5 |               1 |         0.72192 |   1189755.00000 |            0.84 |
+boost_source    | ucg             |               0 |               5 |               1 |         1.60387 |   2643252.00000 |            0.38 |
+boost_source    | fgrep_mmap      |               0 |               5 |               1 |         1.37496 |   2265992.00000 |            0.44 |
+boost_source    | fgrep           |               0 |               5 |               1 |         1.09241 |   1800347.00000 |            0.56 |
 Complete.
 ```
 
+Simple benchmark results with the system time command
+
 ``` shell
-hdang@ATH020224 ~/w/f/benchmark> time rg 'coroutine.*Executor' ../../3p/src/boost/  -Lun -t cpp --color never > /dev/null
-        1.87 real         0.89 user         6.55 sys
-hdang@ATH020224 ~/w/f/benchmark> time ggrep  -En -r --include='*.cpp' --include='*.hpp' 'coroutine.*Executor' ../../3p/src/boost/ > /dev/null
-        1.94 real         0.54 user         1.34 sys
-hdang@ATH020224 ~/w/f/benchmark> time ag --cpp 'coroutine.*Executor' ../../3p/src/boost/ > /dev/null
-        2.02 real         0.71 user         7.53 sys
-hdang@ATH020224 ~/w/f/benchmark> time ucg --noenv --cpp 'coroutine.*Executor'  ../../3p/src/boost/ > /dev/null
-        3.03 real         0.76 user        11.76 sys
-hdang@ATH020224 ~/w/f/benchmark> time fgrep -c -n -p '[.](cpp|hpp)' 'coroutine.*Executor' ../../3p/src/boost/ > /dev/null
-        2.02 real         0.43 user         1.54 sys
+/usr/bin/time rg 'coroutine.*Executor' ../../3p/src/boost/  -un -t cpp --color never > /dev/null
+        1.09 real         0.61 user         4.63 sys
+/usr/bin/time ggrep  -En -r --include='*.cpp' --include='*.hpp' 'coroutine.*Executor' ../../3p/src/boost/ > /dev/null
+        1.61 real         0.47 user         1.06 sys
+/usr/bin/time ag --cpp 'coroutine.*Executor' ../../3p/src/boost/ > /dev/null
+        1.90 real         0.70 user         8.49 sys
+/usr/bin/time ucg --noenv --cpp 'coroutine.*Executor'  ../../3p/src/boost/ > /dev/null
+        2.87 real         0.76 user        13.88 sys
+/usr/bin/time ../commands/fgrep -c -n -p '[.](cpp|hpp)' 'coroutine.*Executor' ../../3p/src/boost/ > /dev/null
+        1.91 real         0.42 user         1.41 sys
 ```
 
-**Note: Both ag and ucg cannot be used as a general purpose text searching tool since these commands cannot handle very large files i.e several GB of text data.**
+**Note: Both ag and ucg cannot be used as a general purpose text searching tool because these commands cannot handle very large files i.e several GB of text data.**
 
-### Linux ###
+### Linux ( the benchmark results are out of date) ###
 
 Below benchmark results are collected with
 * GNU grep 3.1
