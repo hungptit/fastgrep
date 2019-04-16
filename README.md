@@ -3,7 +3,7 @@ The fgrep utility searches any given input files for lines that match one or mor
 
 # What is the different between fgrep and GNU grep#
 
-Both fgrep is modular and it can be reused in other projects. All core algorithms are templatized so we can have flexible and reusable code without sacrificing the performance.
+fgrep is modular and it can be reused in other projects. All core algorithms are templatized so we can have flexible and reusable code without sacrificing the performance.
 
 # Why fgrep is fast? #
 
