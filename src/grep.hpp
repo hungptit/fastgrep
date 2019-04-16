@@ -8,7 +8,6 @@
 #include <string>
 
 namespace fastgrep {
-
     // This policy assumes that lines are all inside the given buffer.
     namespace experiments {
         template <typename Matcher> class GrepPolicy {
