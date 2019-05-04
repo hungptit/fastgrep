@@ -1,5 +1,5 @@
 ;;** `counsel-fast-grep'
-(defcustom counsel-fast-grep-base-command "/Users/hdang/bin/fast-grep -n -p '[.](c|cc|cpp|h|hpp|hh|md|org|txt)$' %s ."
+(defcustom counsel-fast-grep-base-command "fast-grep -n -p '[.](c|cc|cpp|h|hpp|hh|md|org|txt)$' %s ."
   "Alternative to `counsel-ag-base-command' using fast-grep"
   :type 'string)
 
@@ -22,7 +22,7 @@
 (cl-pushnew 'counsel-fast-grep ivy-highlight-grep-commands)
 
 ;;** `counsel-codesearch'
-(defcustom counsel-codesearch-base-command "/Users/hdang/bin/codesearch -n -p '[.](c|cc|cpp|h|hpp|hh|md|org|txt)$' %s -d /Users/hdang/.codesearch"
+(defcustom counsel-codesearch-base-command "codesearch -n -p '[.](c|cc|cpp|h|hpp|hh|md|org|txt)$' %s"
   "Search for a text pattern using codeseach command."
   :type 'string)
 
@@ -47,12 +47,12 @@
 ;; For fast-locate command
 (defun counsel-locate-cmd-default (input)
   "Return a shell command based on INPUT."
-  (counsel-require-program "/Users/hdang/bin/fast-locate")
-  (format "/Users/hdang/bin/fast-locate '%s' -d /Users/hdang/.database"
+  (counsel-require-program "fast-locate")
+  (format "fast-locate '%s'"
           (counsel--elisp-to-pcre
            (ivy--regex input))))
 
 (defun counsel-locate-cmd-noregex (input)
   "Return a shell command based on INPUT."
   (counsel-require-program "locate")
-  (format "/Users/hdang/bin/fast-locate -d /Users/hdang/.database '%s'" input))
+  (format "fast-locate '%s'" input))

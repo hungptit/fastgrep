@@ -20,6 +20,8 @@ namespace fastgrep {
     struct Params {
         int info = 0;
         int regex_mode = 0;
+        
+        // grep parameters
         bool verbose() const { return (info & VERBOSE) > 0; }
         bool color() const { return (info & COLOR) > 0; }
         bool use_memmap() const { return (info & USE_MEMMAP) > 0; }

@@ -53,7 +53,7 @@ namespace fastgrep {
         bool linenum = false;
         const char *file = nullptr;
 
-        virtual void process_line(const char *begin, const size_t len) {
+        void process_line(const char *begin, const size_t len) {
             if (matcher.is_matched(begin, len)) {
                 const size_t buflen = len - 1;
                 if (!linenum) {

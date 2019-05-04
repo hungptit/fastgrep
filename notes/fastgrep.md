@@ -358,7 +358,7 @@ struct ExactMatch {
 # fgrep vs grep
 
 ``` c++
- Performance counter stats for './fgrep "LEVEL":"error" /mnt/weblogs/scribe/workqueue-execution/workqueue-execution-2018-06-12_00000' (3 runs):
+ Performance counter stats for './fast-grep "LEVEL":"error" /mnt/weblogs/scribe/workqueue-execution/workqueue-execution-2018-06-12_00000' (3 runs):
 
       12247.710568 task-clock                #    0.999 CPUs utilized            ( +-  1.25% )
                 28 context-switches          #    0.002 K/sec                    ( +-  6.55% )
@@ -375,7 +375,7 @@ struct ExactMatch {
 ```
 
 ---
-# fgrep vs grep (cont)
+# fast-grep vs grep (cont)
 
 ``` c++
 hdang@dev115 ~/w/f/commands> /usr/sbin/perf stat -r 3 grep '"LEVEL":"error"' /mnt/weblogs/scribe/workqueue-execution/workqueue-execution-2018-06-12_00000 | wc
@@ -479,7 +479,7 @@ avx2_string_find         14 ns         14 ns   49368340
 ```
 
 ---
-# SSE2-fgrep benchmark results
+# SSE2-fast-grep benchmark results
 
 ``` c++
  Performance counter stats for 'grep "LEVEL":"error" /mnt/weblogs/scribe/workqueue-execution/workqueue-execution-2018-06-12_00000' (3 runs):
@@ -498,12 +498,12 @@ avx2_string_find         14 ns         14 ns   49368340
        4.001814923 seconds time elapsed                                          ( +-  1.14% )
 ```
 ---
-# AVX2-fgrep benchmark results
+# AVX2-fast-grep benchmark results
 
 ``` c++
-hdang@dev115 ~/w/f/commands> /usr/sbin/perf stat -r 3 ./fgrep '"LEVEL":"error"' /mnt/weblogs/scribe/workqueue-execution/workqueue-execution-2018-06-12_00000 | wc
+hdang@dev115 ~/w/f/commands> /usr/sbin/perf stat -r 3 ./fast-grep '"LEVEL":"error"' /mnt/weblogs/scribe/workqueue-execution/workqueue-execution-2018-06-12_00000 | wc
 
- Performance counter stats for './fgrep "LEVEL":"error" /mnt/weblogs/scribe/workqueue-execution/workqueue-execution-2018-06-12_00000' (3 runs):
+ Performance counter stats for './fast-grep "LEVEL":"error" /mnt/weblogs/scribe/workqueue-execution/workqueue-execution-2018-06-12_00000' (3 runs):
 
        3102.228162 task-clock                #    0.998 CPUs utilized            ( +-  0.36% )
                 23 context-switches          #    0.008 K/sec                    ( +- 15.12% )
@@ -545,7 +545,7 @@ struct RegexMatcher {
 ```
 
 ---
-# fgrep vs grep vs ripgrep vs ag
+# fast-grep vs grep vs ripgrep vs ag
 
 ``` c++
 hungptit@hungptit ~/w/f/benchmark> ./grep_bench -g pattern1
@@ -557,7 +557,7 @@ Group           |   Experiment    |   Prob. Space   |     Samples     |   Iterat
 pattern1        | gnu_grep        |            Null |              10 |               1 |         1.00000 |     24237.00000 |           41.26 |
 pattern1        | ag              |            Null |              10 |               1 |         2.36679 |     57364.00000 |           17.43 |
 pattern1        | ripgrep         |            Null |              10 |               1 |         0.47122 |     11421.00000 |           87.56 |
-pattern1        | fgrep           |            Null |              10 |               1 |        20.86409 |    505683.00000 |            1.98 |
+pattern1        | fast-grep           |            Null |              10 |               1 |        20.86409 |    505683.00000 |            1.98 |
 Complete.
 ```
 
@@ -591,7 +591,7 @@ const bool is_matched(const char *data, const size_t len) {
 ```
 
 ---
-# fgrep vs grep vs ripgrep vs ag
+# fast-grep vs grep vs ripgrep vs ag
 
 ``` c++
 hungptit@hungptit ~/w/f/benchmark> ./all_tests
@@ -603,12 +603,12 @@ Group           |   Experiment    |   Prob. Space   |     Samples     |   Iterat
 mark_twain      | grep_brew       |            Null |               5 |               1 |         1.00000 |   1799550.00000 |            0.56 |
 mark_twain      | ag              |            Null |               5 |               1 |         1.23578 |   2223852.00000 |            0.45 |
 mark_twain      | ripgrep         |            Null |               5 |               1 |         0.64115 |   1153773.00000 |            0.87 |
-mark_twain      | fgrep           |            Null |               5 |               1 |         0.37734 |    679048.00000 |            1.47 |
+mark_twain      | fast-grep           |            Null |               5 |               1 |         0.37734 |    679048.00000 |            1.47 |
 Complete.
 ```
 
 ---
-# fgrep vs grep vs ripgrep vs ag
+# fast-grep vs grep vs ripgrep vs ag
 
 ``` c++
 
@@ -645,7 +645,7 @@ class: center, middle
 ---
 # Conclusions
 
-* fgrep's raw performance is comparable to that of [ripgrep](https://github.com/BurntSushi/ripgrep) and GNU grep. From our benchmark the_silver_searcher is slower than [grep](https://www.gnu.org/software/grep/) and [ripgrep](https://github.com/BurntSushi/ripgrep).
+* fast-grep's raw performance is comparable to that of [ripgrep](https://github.com/BurntSushi/ripgrep) and GNU grep. From our benchmark the_silver_searcher is slower than [grep](https://www.gnu.org/software/grep/) and [ripgrep](https://github.com/BurntSushi/ripgrep).
 
 * Generic programming paradigm is a big win. It helps to create reusable, flexible, and high performance algorithms.
 
@@ -655,9 +655,9 @@ class: center, middle
 
 # Todo list
 
-* Improve the usability of fgrep.
+* Improve the usability of fast-grep.
 
-* Improve the performance of fgrep.
+* Improve the performance of fast-grep.
 
 * Add more tests.
 

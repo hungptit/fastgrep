@@ -110,7 +110,7 @@
 * How search for a pattern from our text data?
 ** Parse line-by-line
 ** Use std::string::find algorithm
-** fgrep vs grep for exact text matching
+** fast-grep vs grep for exact text matching
 ** Why it is so slow?
    + Need a picture of why thing is slow
 ** Use SSE2 version of string find algorithm
@@ -133,8 +133,8 @@
     + [Regular Expression Matching Can Be Simple And Fast](https://swtch.com/~rsc/regexp/regexp1.html)
 *** std::regex?
     + Have a simple policy that use std::regex
-*** fgrep vs grep benchmark
-*** Why fgrep is slow?
+*** fast-grep vs grep benchmark
+*** Why fast-grep is slow?
     + Show the output of perf command.
 *** Performance comparison of C/C+ regular expression engines.
     + [[https://rust-leipzig.github.io/regex/2017/03/28/comparison-of-regex-engines/][Comparison of regex engines]].
@@ -152,7 +152,7 @@
 *** Searching for patterns from Mark Twain book (16013977 bytes)
 *** Searching for patterns from a log file (676960393 bytes)
 ** Random notes
-    + fgrep performance is comparable to that of grep and ripgrep.
+    + fast-grep performance is comparable to that of grep and ripgrep.
     + Use memory map does speed up file reading algorithm in latest Linux kernels.
     + std::string::find is not fast by default.
     + std::regex is very slow.

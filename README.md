@@ -1,25 +1,25 @@
 # Introduction
-The fgrep utility searches any given input files for lines that match one or more patterns. fgrep is written using modern C++ and is built on top of [ioutils](https://github.com/hungptit/ioutils "A blazing fast fast file I/O library"), [utils](https://github.com/hungptit/utils "A very fast string related functionality written in modern C++"), [fmt](https://github.com/fmtlib/fmt "A modern formating library"), [cereal](https://github.com/USCiLab/cereal "A C++11 library for serialization"), [hyperscan](https://github.com/intel/hyperscan "High-performance regular expression matching library."), and [boost libraries](https://www.boost.org/ "boost.org"). Our benchmarks and unit tests are written using Google [benchmark](https://github.com/google/benchmark "A microbenchmark support library"), [Celero](https://github.com/DigitalInBlue/Celero "C++ Benchmark Authoring Library/Framework"), and [Catch2](https://github.com/catchorg/Catch2 "A modern, C++-native, header-only, test framework for unit-tests, TDD and BDD").
+The fast-grep utility searches any given input files for lines that match one or more patterns. fast-grep is written using modern C++ and is built on top of [ioutils](https://github.com/hungptit/ioutils "A blazing fast fast file I/O library"), [utils](https://github.com/hungptit/utils "A very fast string related functionality written in modern C++"), [fmt](https://github.com/fmtlib/fmt "A modern formating library"), [cereal](https://github.com/USCiLab/cereal "A C++11 library for serialization"), [hyperscan](https://github.com/intel/hyperscan "High-performance regular expression matching library."), and [boost libraries](https://www.boost.org/ "boost.org"). Our benchmarks and unit tests are written using Google [benchmark](https://github.com/google/benchmark "A microbenchmark support library"), [Celero](https://github.com/DigitalInBlue/Celero "C++ Benchmark Authoring Library/Framework"), and [Catch2](https://github.com/catchorg/Catch2 "A modern, C++-native, header-only, test framework for unit-tests, TDD and BDD").
 
-# What is the different between fgrep and GNU grep#
+# What is the different between fast-grep and GNU grep#
 
-fgrep is modular and it can be reused in other projects. All core algorithms are templatized so we can have flexible and reusable code without sacrificing the performance.
+fast-grep is modular and it can be reused in other projects. All core algorithms are templatized so we can have flexible and reusable code without sacrificing the performance.
 
-# Why fgrep is fast? #
+# Why fast-grep is fast? #
 
-The fgrep command is fast because of many reasons and below are key factors
+The fast-grep command is fast because of many reasons and below are key factors
 
 ## Use high-performance regular rexpression matching engine ##
 
-fgrep uses [hyperscan](https://github.com/intel/hyperscan) as a regular expression matching engine. Our performance benchmarks have shown that [hyperscan](https://github.com/intel/hyperscan) is 20x or more faster than that of std::regex.
+fast-grep uses [hyperscan](https://github.com/intel/hyperscan) as a regular expression matching engine. Our performance benchmarks have shown that [hyperscan](https://github.com/intel/hyperscan) is 20x or more faster than that of std::regex.
 
 ## Use high-performance exact text matching algorithm ##
 
-fgrep uses SSE2 and AVX2 optimized algorithms for exact text matching. Our SSE2 and AVX2 algorithms are forked from [this repository](https://github.com/WojciechMula/sse4-strstr). Our exact matching algorithms is 2-4x faster than the standard string find algorithm.
+fast-grep uses SSE2 and AVX2 optimized algorithms for exact text matching. Our SSE2 and AVX2 algorithms are forked from [this repository](https://github.com/WojciechMula/sse4-strstr). Our exact matching algorithms is 2-4x faster than the standard string find algorithm.
 
 ## Use efficient file I/O algorithms ##
 
-fgrep uses very fast algorithms for reading data from file.
+fast-grep uses very fast algorithms for reading data from file.
 
 ## Modern C++ ##
 
@@ -65,7 +65,7 @@ Below benchmark results are collected with:
 * ag 2.2.0
 * rg 0.11.0
 * ucg 0.3.3 
-* fgrep master branch.
+* fast-grep master branch.
 
 **Note**
 
@@ -103,7 +103,7 @@ Below is the total runtime for above regular expression patterns. We can easily 
 * ag is the slowest command.
 * grep and ucg performance is very similar.
 * ripgrep performance is about 3x faster than ag and about 50% faster than both grep and ucg.
-* fgrep is the fastest command, however, it is only about 4% faster than ripgrep.
+* fast-grep is the fastest command, however, it is only about 4% faster than ripgrep.
 
 ``` shell
 ./all_tests -g mark_twain
@@ -117,8 +117,8 @@ mark_twain      | ag              |               0 |               5 |         
 mark_twain      | ripgrep         |               0 |               5 |               1 |         0.66240 |    873793.00000 |            1.14 |
 mark_twain      | ripgrep_mmap    |               0 |               5 |               1 |         0.66358 |    875350.00000 |            1.14 |
 mark_twain      | ucg             |               0 |               5 |               1 |         1.06755 |   1408233.00000 |            0.71 |
-mark_twain      | fgrep_mmap      |               0 |               5 |               1 |         0.68516 |    903822.00000 |            1.11 |
-mark_twain      | fgrep_default   |               0 |               5 |               1 |         0.63492 |    837548.00000 |            1.19 |
+mark_twain      | fast-grep_mmap      |               0 |               5 |               1 |         0.68516 |    903822.00000 |            1.11 |
+mark_twain      | fast-grep_default   |               0 |               5 |               1 |         0.63492 |    837548.00000 |            1.19 |
 Complete.
 ```
 
@@ -130,7 +130,7 @@ This benchmark will evaluate the performance of all commands by searching for al
 2. ucg is the slowest command which is 2x slower than ripgrep.
 
 If we take a detail look at how these commands utilize the system resource we can easily see that:
-1. grep use the least CPU resource and the second is fgrep.
+1. grep use the least CPU resource and the second is fast-grep.
 2. ucg is not utilized CPU resource efficiently.
 
 ``` shell
@@ -145,8 +145,8 @@ boost_source    | ag              |               0 |               5 |         
 boost_source    | ripgrep_no_mmap |               0 |               5 |               1 |         0.67662 |   1096705.00000 |            0.91 |
 boost_source    | ripgrep_mmap    |               0 |               5 |               1 |         0.67609 |   1095832.00000 |            0.91 |
 boost_source    | ucg             |               0 |               5 |               1 |         1.56103 |   2530192.00000 |            0.40 |
-boost_source    | fgrep_mmap      |               0 |               5 |               1 |         1.33632 |   2165968.00000 |            0.46 |
-boost_source    | fgrep           |               0 |               5 |               1 |         1.11688 |   1810288.00000 |            0.55 |
+boost_source    | fast-grep_mmap      |               0 |               5 |               1 |         1.33632 |   2165968.00000 |            0.46 |
+boost_source    | fast-grep           |               0 |               5 |               1 |         1.11688 |   1810288.00000 |            0.55 |
 Complete.
 ```
 
@@ -161,7 +161,7 @@ Simple benchmark results with the system time command
         1.90 real         0.70 user         8.49 sys
 /usr/bin/time ucg --noenv --cpp 'coroutine.*Executor'  ../../3p/src/boost/ > /dev/null
         2.87 real         0.76 user        13.88 sys
-/usr/bin/time ../commands/fgrep -c -n -p '[.](cpp|hpp)' 'coroutine.*Executor' ../../3p/src/boost/ > /dev/null
+/usr/bin/time ../commands/fast-grep -c -n -p '[.](cpp|hpp)' 'coroutine.*Executor' ../../3p/src/boost/ > /dev/null
         1.91 real         0.42 user         1.41 sys
 ```
 
@@ -173,14 +173,14 @@ Below benchmark results are collected with
 * GNU grep 3.1
 * ag 2.2.0
 * rg 0.10.0
-* fgrep master branch.
+* fast-grep master branch.
 
 **Note: The benchmark results are collected in a big and busy development server with 88 cores and network storage.**
 
 #### Searching for text pattern from a Mark Twain's book ####
 
 This benchmark only measures the performance of each command using a single thread. We can easily see that 
-* fgrep is the fastest command, however, the gap between fgrep and ripgrep is only about 10%.
+* fast-grep is the fastest command, however, the gap between fast-grep and ripgrep is only about 10%.
 * ag is the slowest command and I cannot include ucg in our benchmark because the Linux server has the old version of glibc and gcc compiler. 
 
 ``` shell
@@ -193,8 +193,8 @@ Timer resolution: 0.001000 us
 mark_twain      | grep            |               0 |               5 |               1 |         1.00000 |   1923343.00000 |            0.52 |
 mark_twain      | ag              |               0 |               5 |               1 |         1.19866 |   2305431.00000 |            0.43 |
 mark_twain      | ripgrep         |               0 |               5 |               1 |         0.44732 |    860345.00000 |            1.16 |
-mark_twain      | fgrep_mmap      |               0 |               5 |               1 |         0.41027 |    789086.00000 |            1.27 |
-mark_twain      | fgrep_default   |               0 |               5 |               1 |         0.40409 |    777208.00000 |            1.29 |
+mark_twain      | fast-grep_mmap      |               0 |               5 |               1 |         0.41027 |    789086.00000 |            1.27 |
+mark_twain      | fast-grep_default   |               0 |               5 |               1 |         0.40409 |    777208.00000 |            1.29 |
 Complete.
 ```
 
@@ -202,8 +202,8 @@ Complete.
 
 The performance benchmark results show that:
 * ripgrep is the fastest command.
-* grep and fgrep have similar performance and they are 7x slower that ripgrep and this is something that we need to look into. Below are possible reasons:
-  * Both fgrep and grep are single thread command.
+* grep and fast-grep have similar performance and they are 7x slower that ripgrep and this is something that we need to look into. Below are possible reasons:
+  * Both fast-grep and grep are single thread command.
   * Do not use memory map to read the file content. This might not work well on a busy server with the network storage.
 
 ```
@@ -216,25 +216,25 @@ Timer resolution: 0.001000 us
 boost_source    | grep            |               0 |               5 |               1 |         1.00000 |   7929887.00000 |            0.13 |
 boost_source    | ag              |               0 |               5 |               1 |         0.24409 |   1935630.00000 |            0.52 |
 boost_source    | ripgrep         |               0 |               5 |               1 |         0.13643 |   1081891.00000 |            0.92 |
-boost_source    | fgrep_mmap      |               0 |               5 |               1 |         0.90445 |   7172150.00000 |            0.14 |
-boost_source    | fgrep_default   |               0 |               5 |               1 |         0.85858 |   6808481.00000 |            0.15 |
+boost_source    | fast-grep_mmap      |               0 |               5 |               1 |         0.90445 |   7172150.00000 |            0.14 |
+boost_source    | fast-grep_default   |               0 |               5 |               1 |         0.85858 |   6808481.00000 |            0.15 |
 Complete.
 ```
 
 # Usage examples #
 
-## How to use fgrep ##
+## How to use fast-grep ##
 
-Precompiled fgrep commands for MacOS, Linux, and Window Linux Subsystem can be downloaded from this [github repository](https://github.com/hungptit/tools.git).
+Precompiled fast-grep commands for MacOS, Linux, and Window Linux Subsystem can be downloaded from this [github repository](https://github.com/hungptit/tools.git).
 
 ## Help message ##
 
 ``` shell
-~/w/f/commands> ./fgrep -h
-fgrep version 0.1.0
+~/w/f/commands> ./fast-grep -h
+fast-grep version 0.1.0
 Hung Dang <hungptit@gmail.com>
 usage:
-  fgrep [<paths> ... ] options
+  fast-grep [<paths> ... ] options
 
 where options are:
   -?, -h, --help                           display usage information
@@ -266,50 +266,50 @@ where options are:
 Below command will display all matched lines with file names.
 
 ```
- ~/w/f/commands> ./fgrep 'include.*matcher' fgrep.cpp
-fgrep.cpp:#include "utils/matchers.hpp"
-fgrep.cpp:#include "utils/regex_matchers.hpp"
+ ~/w/f/commands> ./fast-grep 'include.*matcher' fast-grep.cpp
+fast-grep.cpp:#include "utils/matchers.hpp"
+fast-grep.cpp:#include "utils/regex_matchers.hpp"
 ```
 
 Use **-i** to ignore the case
 
 ``` shell
- ~/w/f/commands> ./fgrep 'Include.*matcher' -i fgrep.cpp
-fgrep.cpp:#include "utils/matchers.hpp"
-fgrep.cpp:#include "utils/regex_matchers.hpp"
+ ~/w/f/commands> ./fast-grep 'Include.*matcher' -i fast-grep.cpp
+fast-grep.cpp:#include "utils/matchers.hpp"
+fast-grep.cpp:#include "utils/regex_matchers.hpp"
 ```
 
 Use **invert-match** option to display lines that does not match specified regular expression.
 
 ``` shell
- ~/w/f/commands> ./fgrep 'include.*matcher' fgrep.cpp --invert-match
-fgrep.cpp:#include "clara.hpp"
-fgrep.cpp:#include "fmt/format.h"
-fgrep.cpp:#include "grep.hpp"
-fgrep.cpp:#include "ioutils/reader.hpp"
-fgrep.cpp:#include "ioutils/regex_store_policies.hpp"
-fgrep.cpp:#include "ioutils/search.hpp"
-fgrep.cpp:#include "ioutils/search_params.hpp"
-fgrep.cpp:#include "ioutils/simple_store_policy.hpp"
-fgrep.cpp:#include "ioutils/stream.hpp"
-fgrep.cpp:#include "params.hpp"
-fgrep.cpp:#include <deque>
-fgrep.cpp:#include <string>
-fgrep.cpp:#include <vector>
-fgrep.cpp:
-fgrep.cpp:/**
-fgrep.cpp: * The grep execution process has two steps:
-fgrep.cpp: * 1. Expand the search paths and get the list of search files.
-fgrep.cpp: * 2. Search for given pattern using file contents and display the search results.
-fgrep.cpp: */
+ ~/w/f/commands> ./fast-grep 'include.*matcher' fast-grep.cpp --invert-match
+fast-grep.cpp:#include "clara.hpp"
+fast-grep.cpp:#include "fmt/format.h"
+fast-grep.cpp:#include "grep.hpp"
+fast-grep.cpp:#include "ioutils/reader.hpp"
+fast-grep.cpp:#include "ioutils/regex_store_policies.hpp"
+fast-grep.cpp:#include "ioutils/search.hpp"
+fast-grep.cpp:#include "ioutils/search_params.hpp"
+fast-grep.cpp:#include "ioutils/simple_store_policy.hpp"
+fast-grep.cpp:#include "ioutils/stream.hpp"
+fast-grep.cpp:#include "params.hpp"
+fast-grep.cpp:#include <deque>
+fast-grep.cpp:#include <string>
+fast-grep.cpp:#include <vector>
+fast-grep.cpp:
+fast-grep.cpp:/**
+fast-grep.cpp: * The grep execution process has two steps:
+fast-grep.cpp: * 1. Expand the search paths and get the list of search files.
+fast-grep.cpp: * 2. Search for given pattern using file contents and display the search results.
+fast-grep.cpp: */
 ```
 
 ## Search for lines from files that match specified path regex ##
 
-One fgrep feature that is not supported by any grep command is it allows users to specify the path patterns. Below command will search for lines in java source code in RocksDB repository. This feature is very useful when we want to grep through our desired files.
+One fast-grep feature that is not supported by any grep command is it allows users to specify the path patterns. Below command will search for lines in java source code in RocksDB repository. This feature is very useful when we want to grep through our desired files.
 
 ``` shell
- ~/w/f/commands> ./fgrep 'zstd' ../../3p/src/rocksdb/ -p '[.]java$'
+ ~/w/f/commands> ./fast-grep 'zstd' ../../3p/src/rocksdb/ -p '[.]java$'
 ../../3p/src/rocksdb//java/src/main/java/org/rocksdb/CompressionType.java:  ZSTD_COMPRESSION((byte)0x7, "zstd"),
 ```
 
@@ -318,7 +318,7 @@ One fgrep feature that is not supported by any grep command is it allows users t
 Search for a zstd pattern from *.cc file in rocksdb repository
 
 ``` shell
-ATH020224:src hdang$ time fgrep zstd rocksdb/ -p '[.](cc)$' -n
+ATH020224:src hdang$ time fast-grep zstd rocksdb/ -p '[.](cc)$' -n
 rocksdb//table/format.cc:557:        static char zstd_corrupt_msg[] =
 rocksdb//table/format.cc:559:        return Status::Corruption(zstd_corrupt_msg);
 rocksdb//tools/db_bench_tool.cc:694:  else if (!strcasecmp(ctype, "zstd"))
@@ -334,7 +334,7 @@ sys     0m0.027s
 Search for the usage of **kZSTD** in rocksdb codebase using case insensitive option
 
 ``` shell
-ATH020224:src hdang$ time fgrep -i kzstd rocksdb/ -p '[.](cc|h)$' -n
+ATH020224:src hdang$ time fast-grep -i kzstd rocksdb/ -p '[.](cc|h)$' -n
 rocksdb//db/db_test2.cc:1056:    compression_types.push_back(kZSTD);
 rocksdb//db/db_statistics_test.cc:39:    type = kZSTD;
 rocksdb//db/db_test.cc:892:    type = kZSTD;
@@ -376,9 +376,9 @@ sys     0m0.045s
 
 # FAQs #
 
-## Where can I find the binary for fgrep ##
+## Where can I find the binary for fast-grep ##
 
-All fgrep binary for Linux and MacOS can be found from this [github repository](https://github.com/hungptit/tools.git).
+All fast-grep binary for Linux and MacOS can be found from this [github repository](https://github.com/hungptit/tools.git).
 
 ## Does fastgrep try to compete with grep and/or ripgrep? ##
 
