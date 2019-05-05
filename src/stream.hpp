@@ -24,9 +24,7 @@ namespace fastgrep {
               linenum(params.linenum()), console(ioutils::StreamWriter::STDOUT) {}
 
         ~StreamPolicy() {
-            if (color) {
-                console.write(RESET_COLOR.data(), RESET_COLOR.size());
-            }
+            if (color) { console.write(RESET_COLOR.data(), RESET_COLOR.size()); }
         }
 
         void process(const char *begin, const size_t len) {
@@ -67,24 +65,23 @@ namespace fastgrep {
         bool color = false;
         bool linenum = false;
         ioutils::StreamWriter console;
-        const char *file = nullptr;
-        int len = 0;
+        std::string file_name;
 
         void process_line(const char *begin, const size_t len) {
             if (matcher.is_matched(begin, len)) {
                 const size_t buflen = len - 1;
                 if (!linenum) {
                     if (!color) {
-                        if (len > 0) {
-                            console.write(file, len);
+                        if (!file_name.empty()) {
+                            console.write(file_name.data(), file_name.size());
                             console.put(':');
                         }
                         console.write(begin, buflen);
                         console.eol();
                     } else {
-                        if (file) {
+                        if (!file_name.empty()) {
                             console.write(BOLD_BLUE.data(), BOLD_BLUE.size());
-                            console.write(file, len);
+                            console.write(file_name.data(), file_name.size());
                             console.put(':');
                         }
                         console.write(BOLD_GREEN.data(), BOLD_GREEN.size());
@@ -94,16 +91,18 @@ namespace fastgrep {
                 } else {
                     std::string numstr = std::to_string(lines);
                     if (!color) {
-                        console.write(file, len);
-                        console.put(':');
+                        if (!file_name.empty()) {
+                            console.write(file_name.data(), file_name.size());
+                            console.put(':');
+                        }
                         console.write(numstr.data(), numstr.size());
                         console.put(':');
                         console.write(begin, buflen);
                         console.eol();
                     } else {
-                        if (file) {
+                        if (!file_name.empty()) {
                             console.write(BOLD_BLUE.data(), BOLD_BLUE.size());
-                            console.write(file, len);
+                            console.write(file_name.data(), file_name.size());
                             console.put(':');
                         }
                         console.write(BOLD_WHITE.data(), BOLD_WHITE.size());
@@ -118,10 +117,7 @@ namespace fastgrep {
         }
 
         // Set the file name so we can display our results better.
-        void set_filename(const char *fname) {
-            file = fname;
-            len = strlen(file);
-        }
+        void set_filename(const char *fname) { file_name = std::string(fname); }
 
         // Process text data in the linebuf.
         void finalize() {

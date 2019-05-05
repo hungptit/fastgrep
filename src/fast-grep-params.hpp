@@ -2,6 +2,7 @@
 #include "clara.hpp"
 #include "fmt/format.h"
 #include "utils/regex_matchers.hpp"
+#include "ioutils/utilities.hpp"
 
 namespace fastgrep {
     namespace experiments {
@@ -163,6 +164,13 @@ namespace fastgrep {
                 }
             }
 
+            // Remove the trailing slash
+            if (!params.paths.empty()) {
+                for (auto & item : params.paths) {
+                    ioutils::remove_trailing_slash(item);
+                }
+            }
+            
             // Set the path regex to "." if users do not provide it.
             if (params.path_regex.empty()) { params.path_regex = "."; }
 
