@@ -71,11 +71,15 @@ BENCHMARK(mark_twain, ucg, number_of_samples, number_of_operations) {
 }
 
 BENCHMARK(mark_twain, fgrep_mmap, number_of_samples, number_of_operations) {
-    run_all_tests(datafile, "../commands/fgrep --mmap -n ", patterns);
+    run_all_tests(datafile, "../commands/fast-grep --mmap -n ", patterns);
 }
 
 BENCHMARK(mark_twain, fgrep_default, number_of_samples, number_of_operations) {
-    run_all_tests(datafile, "../commands/fgrep -n ", patterns);
+    run_all_tests(datafile, "../commands/fast-grep -n ", patterns);
+}
+
+BENCHMARK(mark_twain, fast_grep, number_of_samples, number_of_operations) {
+    run_all_tests(datafile, "../commands/fast-grep-new -n ", patterns);
 }
 
 const std::string boost_src = "../../3p/src/boost/";
@@ -103,10 +107,14 @@ BENCHMARK(boost_source, ucg, number_of_samples, number_of_operations) {
 }
 
 BENCHMARK(boost_source, fgrep_mmap, number_of_samples, number_of_operations) {
-    test_with_boost_source_code("../commands/fgrep --mmap -c -n -p '[.](cpp|hpp)' ", pattern, boost_src);
+    test_with_boost_source_code("../commands/fast-grep --mmap -c -n -p '[.](cpp|hpp)' ", pattern, boost_src);
 }
 
 BENCHMARK(boost_source, fgrep, number_of_samples, number_of_operations) {
-    test_with_boost_source_code("../commands/fgrep -c -n -p '[.](cpp|hpp)' ", pattern, boost_src);
+    test_with_boost_source_code("../commands/fast-grep -c -n -p '[.](cpp|hpp)' ", pattern, boost_src);
+}
+
+BENCHMARK(boost_source, fast_grep, number_of_samples, number_of_operations) {
+    test_with_boost_source_code("../commands/fast-grep-new -c -n -p '[.](cpp|hpp)' ", pattern, boost_src);
 }
 

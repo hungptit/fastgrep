@@ -14,14 +14,18 @@ namespace fastgrep {
       public:
         template <typename Params>
         StreamPolicy(const std::string &patt, Params &&params)
-            : matcher(patt, params.regex_mode), lines(1), pos(0), linebuf(), console(),
-              color(params.color()), linenum(params.linenum()) {}
+            : matcher(patt, params.regex_mode), lines(1), pos(0), linebuf(), console(), color(params.color()),
+              linenum(params.linenum()) {}
 
         void process(const char *begin, const size_t len) {
             const char *start = begin;
             const char *end = begin + len;
             const char *ptr = begin;
+#ifdef USE_AVX2
+            while ((ptr = utils::avx2::memchr(ptr, EOL, end - ptr))) {
+#elif
             while ((ptr = static_cast<const char *>(memchr(ptr, EOL, end - ptr)))) {
+#endif
                 if (linebuf.empty()) {
                     process_line(start, ptr - start + 1);
                 } else {
@@ -77,9 +81,7 @@ namespace fastgrep {
         }
 
         // Set the file name so we can display our results better.
-        void set_filename(const char *fname) {
-            file = fname;
-        }
+        void set_filename(const char *fname) { file = fname; }
 
         // Process text data in the linebuf.
         void finalize() {
