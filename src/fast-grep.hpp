@@ -31,7 +31,7 @@ namespace fastgrep {
 
             void process_file(const std::string &p) {
                 if (!path_matcher.is_matched(p.data(), p.size())) return;
-                grep(p.data());
+                grep(p.data()); // TODO: Need to speed up this call.
                 ++number_of_files;
             }
 
