@@ -1,10 +1,6 @@
 #include "celero/Celero.h"
 
 #include "fmt/format.h"
-#include "grep.hpp"
-#include "ioutils/ioutils.hpp"
-#include <algorithm>
-#include <iostream>
 #include <string>
 
 constexpr int number_of_samples = 5;
@@ -83,7 +79,7 @@ BENCHMARK(mark_twain, fast_grep, number_of_samples, number_of_operations) {
 }
 
 const std::string boost_src = "../../3p/src/boost/";
-const std::string pattern = " 'coroutine.*Executor' ";
+const std::string pattern = " 'coroutine.*Ex\\w+cutor' ";
 
 // We are only interrested in C++ files in this benchmark.
 BASELINE(boost_source, grep, number_of_samples, number_of_operations) {

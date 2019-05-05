@@ -6,17 +6,6 @@
 
 namespace fastgrep {
     namespace experiments {
-        // Reference: https://misc.flogisoft.com/bash/tip_colors_and_formatting
-        static const std::string FIFO_COLOR = "\033[2;32m";    // Normal, Green
-        static const std::string DIR_COLOR = "\033[1;91m";     // Bold, Light red
-        static const std::string CHR_COLOR = "\033[2;33m";     // Normal, Yellow
-        static const std::string SYMLINK_COLOR = "\033[2;34m"; // Blink, Blue
-        static const std::string BLK_COLOR = "\033[1;35m";     // Bold, Magenta
-        static const std::string SOCK_COLOR = "\033[2;36m";    // Normal, Cyan
-        static const std::string WHT_COLOR = "\033[2;37m";     // Normal, Light gray
-        static const std::string FILE_COLOR = "\033[2;97m";    // Normal, white
-        static const std::string RESET_COLOR = "\033[0m";      // Reset
-
         /**
          * Note: This class will be served as the policy for the ioutils::filesystem::DefaultSearch.
          *
