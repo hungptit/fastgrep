@@ -1,5 +1,5 @@
-#include "fast-grep-params.hpp"
 #include "fast-grep.hpp"
+#include "fast-grep-params.hpp"
 #include "fmt/format.h"
 #include "ioutils/reader.hpp"
 #include "ioutils/search.hpp"
@@ -18,7 +18,7 @@ namespace {
                 using GrepMatcher = utils::hyperscan::RegexMatcher;
                 using GrepPolicy = fastgrep::StreamPolicy<GrepMatcher>;
                 using GrepReaderPolicy = ioutils::StreamReader<GrepPolicy, BUFFER_SIZE>;
-                
+
                 if (!params.use_mmap()) {
                     using Reader = ioutils::FileReader<GrepReaderPolicy>;
                     using SearchPolicy = fastgrep::experiments::GrepSearchPolicy<Reader>;
@@ -84,7 +84,7 @@ namespace {
                     using SearchPolicy = fastgrep::experiments::GrepSearchPolicy<Reader>;
                     using Search = ioutils::filesystem::DefaultSearch<SearchPolicy>;
                     Search grep(params);
-                    grep.traverse(params.paths);                    
+                    grep.traverse(params.paths);
                 }
             }
         }
