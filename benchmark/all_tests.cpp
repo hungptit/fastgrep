@@ -47,7 +47,7 @@ namespace {
 } // namespace
 
 BASELINE(mark_twain, grep, number_of_samples, number_of_operations) {
-    run_all_tests(datafile, "ggrep -E", patterns);
+    run_all_tests(datafile, "grep -E", patterns);
 }
 
 BENCHMARK(mark_twain, ag, number_of_samples, number_of_operations) {
@@ -62,9 +62,9 @@ BENCHMARK(mark_twain, ripgrep_mmap, number_of_samples, number_of_operations) {
     run_all_tests(datafile, "rg  -un --mmap ", patterns);
 }
 
-BENCHMARK(mark_twain, ucg, number_of_samples, number_of_operations) {
-    run_all_tests(datafile, "ucg", patterns);
-}
+// BENCHMARK(mark_twain, ucg, number_of_samples, number_of_operations) {
+//     run_all_tests(datafile, "ucg", patterns);
+// }
 
 BENCHMARK(mark_twain, fgrep_mmap, number_of_samples, number_of_operations) {
     run_all_tests(datafile, "../commands/fast-grep --mmap -n ", patterns);
@@ -79,7 +79,7 @@ const std::string pattern = " 'coroutine.*Ex\\w+cutor' ";
 
 // We are only interrested in C++ files in this benchmark.
 BASELINE(boost_source, grep, number_of_samples, number_of_operations) {
-    test_with_boost_source_code("ggrep  -En -r --include='*.cpp' --include='*.hpp' ", pattern, boost_src);
+    test_with_boost_source_code("grep  -En -r --include='*.cpp' --include='*.hpp' ", pattern, boost_src);
 }
 
 BENCHMARK(boost_source, ag, number_of_samples, number_of_operations) {
@@ -94,9 +94,9 @@ BENCHMARK(boost_source, ripgrep_mmap, number_of_samples, number_of_operations) {
     test_with_boost_source_code("rg -un --mmap -t cpp --color never ", pattern, boost_src);
 }
 
-BENCHMARK(boost_source, ucg, number_of_samples, number_of_operations) {
-    test_with_boost_source_code("ucg --noenv --cpp ", pattern, boost_src);
-}
+// BENCHMARK(boost_source, ucg, number_of_samples, number_of_operations) {
+//     test_with_boost_source_code("ucg --noenv --cpp ", pattern, boost_src);
+// }
 
 BENCHMARK(boost_source, fastgrep_mmap, number_of_samples, number_of_operations) {
     test_with_boost_source_code("../commands/fast-grep --mmap -c -n -p '[.](cpp|hpp)' ", pattern, boost_src);

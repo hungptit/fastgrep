@@ -28,7 +28,7 @@ namespace fastgrep {
         struct Params {
             int flags = 0;
             int regex_mode = 0;
-            int level = -1;
+            int maxdepth = std::numeric_limits<int>::max();
             std::string regex;
             std::string path_regex;
             std::string prefix;
