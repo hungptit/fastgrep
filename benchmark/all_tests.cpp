@@ -55,11 +55,11 @@ BENCHMARK(mark_twain, ag, number_of_samples, number_of_operations) {
 }
 
 BENCHMARK(mark_twain, ripgrep_no_mmap, number_of_samples, number_of_operations) {
-    run_all_tests(datafile, "rg  -un --no-mmap ", patterns);
+    run_all_tests(datafile, "rg  -un --no-mmap --no-heading ", patterns);
 }
 
 BENCHMARK(mark_twain, ripgrep_mmap, number_of_samples, number_of_operations) {
-    run_all_tests(datafile, "rg  -un --mmap ", patterns);
+    run_all_tests(datafile, "rg  -un --mmap --no-heading ", patterns);
 }
 
 // BENCHMARK(mark_twain, ucg, number_of_samples, number_of_operations) {
@@ -87,11 +87,11 @@ BENCHMARK(boost_source, ag, number_of_samples, number_of_operations) {
 }
 
 BENCHMARK(boost_source, ripgrep_no_mmap, number_of_samples, number_of_operations) {
-    test_with_boost_source_code("rg -un --no-mmap -t cpp --color never ", pattern, boost_src);
+    test_with_boost_source_code("rg -un --no-mmap --no-heading -t cpp --color never ", pattern, boost_src);
 }
 
 BENCHMARK(boost_source, ripgrep_mmap, number_of_samples, number_of_operations) {
-    test_with_boost_source_code("rg -un --mmap -t cpp --color never ", pattern, boost_src);
+    test_with_boost_source_code("rg -un --mmap --no-heading -t cpp --color never ", pattern, boost_src);
 }
 
 // BENCHMARK(boost_source, ucg, number_of_samples, number_of_operations) {

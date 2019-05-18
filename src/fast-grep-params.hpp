@@ -109,6 +109,7 @@ namespace fastgrep {
             bool utf8 = false;  // Support UTF8.
             bool utf16 = false; // Support UTF16.
             bool utf32 = false; // Support UTF32.
+            std::vector<std::string> paths;
 
             auto cli =
                 clara::Help(help) | clara::Opt(verbose)["--verbose"]("Display verbose information") |
@@ -132,7 +133,7 @@ namespace fastgrep {
                 clara::Opt(params.path_regex, "path_pattern")["-p"]["--path-regex"]("Path regex.") |
 
                 // Required arguments.
-                clara::Arg(params.paths, "paths")("Search paths");
+                clara::Arg(paths, "paths")("Search paths");
 
             auto result = cli.parse(clara::Args(argc, argv));
             if (!result) {
@@ -152,21 +153,21 @@ namespace fastgrep {
             // If users do not specify the search pattern then the first elements of paths is the search
             // pattern.
             if (params.regex.empty()) {
-                if (params.paths.empty()) {
+                if (paths.empty()) {
                     throw std::runtime_error("Invalid syntax. The search pattern and search paths are required.");
-                } else if (params.paths.size() == 1) {
+                } else if (paths.size() == 1) {
                     stdin = 1;
-                    params.regex = params.paths.back();
-                    params.paths.pop_back();
+                    params.regex = paths.back();
+                    paths.pop_back();
                 } else {
-                    params.regex = params.paths.front();
-                    params.paths.erase(params.paths.begin());
+                    params.regex = paths.front();
+                    paths.erase(paths.begin());
                 }
             }
 
             // Remove the trailing slash
-            if (!params.paths.empty()) {
-                for (auto &item : params.paths) { ioutils::remove_trailing_slash(item); }
+            if (!paths.empty()) {
+                for (auto &item : paths) { params.paths.emplace_back(ioutils::path::simplify_path(item)); }
             }
 
             // Set the path regex to "." if users do not provide it.

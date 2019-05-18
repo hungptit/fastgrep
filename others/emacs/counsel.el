@@ -54,5 +54,5 @@
 
 (defun counsel-locate-cmd-noregex (input)
   "Return a shell command based on INPUT."
-  (counsel-require-program "locate")
+  (counsel-require-program "fast-locate")
   (format "fast-locate '%s'" input))
