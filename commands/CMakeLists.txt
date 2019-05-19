@@ -89,6 +89,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Include folder
 include_directories ("${EXTERNAL_DIR}/include")
+include_directories ("${EXTERNAL_DIR}/include/hs")
 include_directories ("${ROOT_DIR}/src")
 
 # Hyperscan
@@ -97,7 +98,7 @@ SET(LIB_HS_RUNTIME "${EXTERNAL_DIR}/lib/libhs_runtime.a")
 
 # Build all
 set(CMAKE_INSTALL_PREFIX "$ENV{HOME}")
-set(COMMAND_SRC_FILES fgrep fast-grep)
+set(COMMAND_SRC_FILES simplegrep fast-grep)
 foreach (src_file ${COMMAND_SRC_FILES})
   ADD_EXECUTABLE(${src_file} ${src_file}.cpp)
   TARGET_LINK_LIBRARIES(${src_file} ${LIB_HS} ${LIB_HS_RUNTIME})

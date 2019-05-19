@@ -15,7 +15,11 @@ namespace fastgrep {
       public:
         template <typename Params>
         SimplePolicy(const std::string &patt, Params &&params)
-            : matcher(patt, params.regex_mode), lines(1), pos(0), console(), linenum(params.linenum()),
+            : matcher(patt, params.regex_mode),
+              lines(1),
+              pos(0),
+              console(),
+              linenum(params.linenum()),
               color(params.color()) {}
 
         void process(const char *begin, const size_t len) {
@@ -24,8 +28,13 @@ namespace fastgrep {
             const char *ptr = begin;
             while ((ptr = static_cast<const char *>(memchr(ptr, EOL, end - ptr)))) {
                 process_line(start, ptr - start + 1);
-                start = ++ptr;
-                ++lines;
+
+                // Skip empty lines if we can
+                while (ptr < end && (*ptr == EOL)) {
+                    ++ptr;
+                    ++lines;
+                }
+                start = ptr;
             }
 
             // Update the line buffer with leftover data.
@@ -49,9 +58,7 @@ namespace fastgrep {
         const char *file;
 
         // Set the file name so we can display our results better.
-        void set_filename(const char *fname) {
-            file = fname;
-        }
+        void set_filename(const char *fname) { file = fname; }
 
         virtual void process_line(const char *begin, const size_t len) {
             if (matcher.is_matched(begin, len)) {

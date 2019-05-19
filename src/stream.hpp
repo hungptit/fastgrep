@@ -20,8 +20,13 @@ namespace fastgrep {
       public:
         template <typename Params>
         StreamPolicy(const std::string &patt, Params &&params)
-            : matcher(patt, params.regex_mode), lines(1), pos(0), linebuf(), color(params.color()),
-              linenum(params.linenum()), console(ioutils::StreamWriter::STDOUT) {}
+            : matcher(patt, params.regex_mode),
+              lines(1),
+              pos(0),
+              linebuf(),
+              color(params.color()),
+              linenum(params.linenum()),
+              console(ioutils::StreamWriter::STDOUT) {}
 
         ~StreamPolicy() {
             if (color) { console.write(RESET_COLOR.data(), RESET_COLOR.size()); }
@@ -44,9 +49,12 @@ namespace fastgrep {
                     linebuf.clear();
                 }
 
-                // Update parameters
-                start = ++ptr;
-                ++lines;
+                // Skip empty lines if we can
+                while (ptr < end && (*ptr == EOL)) {
+                    ++ptr;
+                    ++lines;
+                }
+                start = ptr;
 
                 // Stop if we reach the end of the buffer.
                 if (ptr >= end) break;
