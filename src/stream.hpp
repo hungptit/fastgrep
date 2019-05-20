@@ -57,11 +57,11 @@ namespace fastgrep {
                 start = ptr;
 
                 // Stop if we reach the end of the buffer.
-                if (ptr >= end) break;
+                if (start == end) break;
             }
 
             // Update the line buffer with leftover data.
-            if (ptr == nullptr) { linebuf.append(start, end - start); }
+            if (start < end) { linebuf.append(start, end - start); }
             pos += len;
         }
 

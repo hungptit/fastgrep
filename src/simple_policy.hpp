@@ -11,7 +11,7 @@ namespace fastgrep {
 
     // The matcher will take the regular expression pattern and a regex mode. This should be enough for any
     // text searching task.
-    template <typename Matcher, typename Console = FMTPolicy> class SimplePolicy {
+    template <typename Matcher> class SimplePolicy {
       public:
         template <typename Params>
         SimplePolicy(const std::string &patt, Params &&params)
@@ -52,7 +52,6 @@ namespace fastgrep {
         size_t lines = 1;
         size_t pos = 0;
 
-        Console console;
         bool linenum;
         bool color;
         const char *file;
@@ -60,20 +59,50 @@ namespace fastgrep {
         // Set the file name so we can display our results better.
         void set_filename(const char *fname) { file = fname; }
 
-        virtual void process_line(const char *begin, const size_t len) {
+        void process_line(const char *begin, const size_t len) {
             if (matcher.is_matched(begin, len)) {
                 const size_t buflen = len - 1;
-                if (linenum) {
+                if (!linenum) {
                     if (!color) {
-                        console.print_plain_text(begin, begin + buflen, lines);
+                        if (!file_name.empty()) {
+                            console.write(file_name.data(), file_name.size());
+                            console.put(':');
+                        }
+                        console.write(begin, buflen);
+                        console.eol();
                     } else {
-                        console.print_color_text(begin, begin + buflen, lines);
+                        if (!file_name.empty()) {
+                            console.write(BOLD_BLUE.data(), BOLD_BLUE.size());
+                            console.write(file_name.data(), file_name.size());
+                            console.put(':');
+                        }
+                        console.write(BOLD_GREEN.data(), BOLD_GREEN.size());
+                        console.write(begin, buflen);
+                        console.eol();
                     }
                 } else {
+                    std::string numstr = std::to_string(lines);
                     if (!color) {
-                        console.print_plain_text(begin, begin + buflen);
+                        if (!file_name.empty()) {
+                            console.write(file_name.data(), file_name.size());
+                            console.put(':');
+                        }
+                        console.write(numstr.data(), numstr.size());
+                        console.put(':');
+                        console.write(begin, buflen);
+                        console.eol();
                     } else {
-                        console.print_color_text(begin, begin + buflen);
+                        if (!file_name.empty()) {
+                            console.write(BOLD_BLUE.data(), BOLD_BLUE.size());
+                            console.write(file_name.data(), file_name.size());
+                            console.put(':');
+                        }
+                        console.write(BOLD_WHITE.data(), BOLD_WHITE.size());
+                        console.write(numstr.data(), numstr.size());
+                        console.put(':');
+                        console.write(BOLD_GREEN.data(), BOLD_GREEN.size());
+                        console.write(begin, buflen);
+                        console.eol();
                     }
                 }
             }
