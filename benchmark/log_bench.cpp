@@ -6,7 +6,6 @@
 #include <iostream>
 #include <string>
 
-constexpr int number_of_samples = 10;
 constexpr int number_of_operations = 1;
 
 CELERO_MAIN
