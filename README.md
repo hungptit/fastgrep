@@ -99,54 +99,49 @@ const std::vector<std::string> patterns = {
 
 **Benchmark results**
 
-Below is the total runtime for above regular expression patterns. We can easily see that:
-* ag is the slowest command.
-* grep and ucg performance is very similar.
-* ripgrep performance is about 3x faster than ag and about 50% faster than both grep and ucg.
-* fast-grep is the fastest command, however, it is only about 4% faster than ripgrep.
-
 ``` shell
-./all_tests -g mark_twain
+ATH020224:benchmark hdang$ ./all_tests -g mark_twain
 Celero
 Timer resolution: 0.001000 us
 -----------------------------------------------------------------------------------------------------------------------------------------------
      Group      |   Experiment    |   Prob. Space   |     Samples     |   Iterations    |    Baseline     |  us/Iteration   | Iterations/sec  |
 -----------------------------------------------------------------------------------------------------------------------------------------------
-mark_twain      | grep            |               0 |               5 |               1 |         1.00000 |   1319132.00000 |            0.76 |
-mark_twain      | ag              |               0 |               5 |               1 |         1.92796 |   2543238.00000 |            0.39 |
-mark_twain      | ripgrep         |               0 |               5 |               1 |         0.66240 |    873793.00000 |            1.14 |
-mark_twain      | ripgrep_mmap    |               0 |               5 |               1 |         0.66358 |    875350.00000 |            1.14 |
-mark_twain      | ucg             |               0 |               5 |               1 |         1.06755 |   1408233.00000 |            0.71 |
-mark_twain      | fast-grep_mmap      |               0 |               5 |               1 |         0.68516 |    903822.00000 |            1.11 |
-mark_twain      | fast-grep_default   |               0 |               5 |               1 |         0.63492 |    837548.00000 |            1.19 |
+mark_twain      | grep            |               0 |               5 |               1 |         1.00000 |   1430358.00000 |            0.70 |
+mark_twain      | ag              |               0 |               5 |               1 |         1.84303 |   2636194.00000 |            0.38 |
+mark_twain      | ripgrep_no_mmap |               0 |               5 |               1 |         0.59646 |    853148.00000 |            1.17 |
+mark_twain      | ripgrep_mmap    |               0 |               5 |               1 |         0.59751 |    854653.00000 |            1.17 |
+mark_twain      | ucg             |               0 |               5 |               1 |         0.96542 |   1380899.00000 |            0.72 |
+mark_twain      | fgrep_mmap      |               0 |               5 |               1 |         0.59725 |    854288.00000 |            1.17 |
+mark_twain      | fgrep_default   |               0 |               5 |               1 |         0.54069 |    773377.00000 |            1.29 |
 Complete.
 ```
 
-#### Search for a **coroutine.\*Executor** pattern in boost source code ####
+**Analysis**
+* ag is the slowest command.
+* grep and ucg performance is very similar.
+* ripgrep performance is about 3x faster than ag and about 50% faster than both grep and ucg.
+* fast-grep is the fastest command, however, it is about 10% faster than ripgrep.
+
+
+#### Search for a **coroutine.*Ex\\w+cutor** pattern in boost source code ####
 *Note: This test is very simple so it might be biased.*
 
-This benchmark will evaluate the performance of all commands by searching for all matched line in C++ files. The performance benchmark results show that:
-1. ripgrep is the fastest command i.e 50% faster than GNU grep.
-2. ucg is the slowest command which is 2x slower than ripgrep.
-
-If we take a detail look at how these commands utilize the system resource we can easily see that:
-1. grep use the least CPU resource and the second is fast-grep.
-2. ucg is not utilized CPU resource efficiently.
+**Benchmark results**
 
 ``` shell
-./all_tests -g boost_source
+ATH020224:benchmark hdang$ ./all_tests -g boost_source
 Celero
 Timer resolution: 0.001000 us
 -----------------------------------------------------------------------------------------------------------------------------------------------
      Group      |   Experiment    |   Prob. Space   |     Samples     |   Iterations    |    Baseline     |  us/Iteration   | Iterations/sec  |
 -----------------------------------------------------------------------------------------------------------------------------------------------
-boost_source    | grep            |               0 |               5 |               1 |         1.00000 |   1620848.00000 |            0.62 |
-boost_source    | ag              |               0 |               5 |               1 |         1.24795 |   2022735.00000 |            0.49 |
-boost_source    | ripgrep_no_mmap |               0 |               5 |               1 |         0.67662 |   1096705.00000 |            0.91 |
-boost_source    | ripgrep_mmap    |               0 |               5 |               1 |         0.67609 |   1095832.00000 |            0.91 |
-boost_source    | ucg             |               0 |               5 |               1 |         1.56103 |   2530192.00000 |            0.40 |
-boost_source    | fast-grep_mmap      |               0 |               5 |               1 |         1.33632 |   2165968.00000 |            0.46 |
-boost_source    | fast-grep           |               0 |               5 |               1 |         1.11688 |   1810288.00000 |            0.55 |
+boost_source    | grep            |               0 |               5 |               1 |         1.00000 |   2330239.00000 |            0.43 |
+boost_source    | ag              |               0 |               5 |               1 |         0.41668 |    970954.00000 |            1.03 |
+boost_source    | ripgrep_no_mmap |               0 |               5 |               1 |         0.24649 |    574370.00000 |            1.74 |
+boost_source    | ripgrep_mmap    |               0 |               5 |               1 |         0.22735 |    529791.00000 |            1.89 |
+boost_source    | ucg             |               0 |               5 |               1 |         0.68000 |   1584567.00000 |            0.63 |
+boost_source    | fastgrep_mmap   |               0 |               5 |               1 |         1.24865 |   2909654.00000 |            0.34 |
+boost_source    | fastgrep        |               0 |               5 |               1 |         1.04904 |   2444515.00000 |            0.41 |
 Complete.
 ```
 
@@ -164,6 +159,15 @@ Simple benchmark results with the system time command
 /usr/bin/time ../commands/fast-grep -c -n -p '[.](cpp|hpp)' 'coroutine.*Executor' ../../3p/src/boost/ > /dev/null
         1.91 real         0.42 user         1.41 sys
 ```
+
+**Analysis**
+1. ripgrep is the fastest command i.e 90% faster than GNU grep.
+2. fast-grep is the slowest command which is 4x slower than ripgrep.
+3. GNU-grep performance is similar to the fast-grep since they are both singled thread command. Note that ag, ripgrep, and ucg does push all core to their limits i.e the CPU clock might jump to the maximum value. 
+
+If we take a detail look at how these commands utilize the system resource we can easily see that:
+1. grep use the least CPU resource and the second is fast-grep.
+2. ucg is not utilized CPU resource efficiently.
 
 **Note: Both ag and ucg cannot be used as a general purpose text searching tool because these commands cannot handle very large files i.e several GB of text data.**
 

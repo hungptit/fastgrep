@@ -46,8 +46,14 @@ namespace {
     }
 } // namespace
 
+#ifdef __APPLE__
+const std::string gnu_grep = "ggrep ";
+#else
+const std::string gnu_grep = "grep ";
+#endif
+
 BASELINE(mark_twain, grep, number_of_samples, number_of_operations) {
-    run_all_tests(datafile, "ggrep -E", patterns);
+    run_all_tests(datafile, gnu_grep + " -E ", patterns);
 }
 
 BENCHMARK(mark_twain, ag, number_of_samples, number_of_operations) {
@@ -79,7 +85,7 @@ const std::string pattern = " 'coroutine.*Ex\\w+cutor' ";
 
 // We are only interrested in C++ files in this benchmark.
 BASELINE(boost_source, grep, number_of_samples, number_of_operations) {
-    test_with_boost_source_code("ggrep  -En -r --include='*.cpp' --include='*.hpp' ", pattern, boost_src);
+    test_with_boost_source_code(gnu_grep + " -En -r --include='*.cpp' --include='*.hpp' ", pattern, boost_src);
 }
 
 BENCHMARK(boost_source, ag, number_of_samples, number_of_operations) {

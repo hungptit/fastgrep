@@ -1,9 +1,9 @@
 #pragma once
 
-#include "constants.hpp"
-#include "output.hpp"
 #include "utils.hpp"
 #include <string>
+#include "ioutils/fdwriter.hpp"
+#include "colors.hpp"
 
 namespace fastgrep {
     // Note: We only use memmap reader if file content can be mapped entirely in memory. This assumption
@@ -18,10 +18,14 @@ namespace fastgrep {
             : matcher(patt, params.regex_mode),
               lines(1),
               pos(0),
-              console(),
               linenum(params.linenum()),
-              color(params.color()) {}
+              color(params.color()),
+              console(ioutils::StreamWriter::STDOUT) {}
 
+        ~SimplePolicy() {
+            if (color) { console.write(RESET_COLOR.data(), RESET_COLOR.size()); }
+        }
+        
         void process(const char *begin, const size_t len) {
             const char *start = begin;
             const char *end = begin + len;
@@ -54,17 +58,18 @@ namespace fastgrep {
 
         bool linenum;
         bool color;
-        const char *file;
+        ioutils::StreamWriter console;
+        std::string file_name;
 
         // Set the file name so we can display our results better.
-        void set_filename(const char *fname) { file = fname; }
+        void set_filename(const char *fname) { file_name = fname; }
 
         void process_line(const char *begin, const size_t len) {
             if (matcher.is_matched(begin, len)) {
                 const size_t buflen = len - 1;
                 if (!linenum) {
                     if (!color) {
-                        if (!file_name.empty()) {
+                        if (!file_name) {
                             console.write(file_name.data(), file_name.size());
                             console.put(':');
                         }
