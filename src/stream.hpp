@@ -26,7 +26,7 @@ namespace fastgrep {
             if (color) { console.write(RESET_COLOR.data(), RESET_COLOR.size()); }
         }
 
-        void process(const char *begin, const size_t len) {
+        void process(const char *begin, const size_t len, const size_t) {
             const char *start = begin;
             const char *end = begin + len;
             const char *ptr = begin;
