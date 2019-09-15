@@ -26,3 +26,7 @@
 	path = 3p/src/utils
 	url = https://github.com/hungptit/utils.git
 	branch = master
+[submodule "3p/src/doctest"]
+	path = 3p/src/doctest
+	url = https://github.com/onqtam/doctest.git
+	branch = master
