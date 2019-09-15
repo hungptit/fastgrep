@@ -1,0 +1,28 @@
+[submodule "3p/src/Clara"]
+	path = 3p/src/Clara
+	url = https://github.com/catchorg/Clara.git
+	branch = master
+[submodule "3p/src/fmt"]
+	path = 3p/src/fmt
+	url = https://github.com/fmtlib/fmt.git
+	branch = master
+[submodule "3p/src/hyperscan"]
+	path = 3p/src/hyperscan
+	url = https://github.com/intel/hyperscan.git
+	branch = master
+[submodule "3p/src/Celero"]
+	path = 3p/src/Celero
+	url = https://github.com/DigitalInBlue/Celero.git
+	branch = master
+[submodule "3p/src/benchmark"]
+	path = 3p/src/benchmark
+	url = https://github.com/google/benchmark.git
+	branch = master
+[submodule "3p/src/ioutils"]
+	path = 3p/src/ioutils
+	url = https://github.com/hungptit/ioutils.git
+	branch = master
+[submodule "3p/src/utils"]
+	path = 3p/src/utils
+	url = https://github.com/hungptit/utils.git
+	branch = master
