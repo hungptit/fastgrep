@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
     auto params = fastgrep::experiments::parse_input_arguments(argc, argv);
     if (!params.stdin()) {
         search(params);
-    } else { // Grep data from STDIN
+    } else {
         search_stdin(params);
     }
     return EXIT_SUCCESS;
