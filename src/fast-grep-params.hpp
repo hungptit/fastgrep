@@ -29,10 +29,10 @@ namespace fastgrep {
             int flags = 0;
             int regex_mode = 0;
             int maxdepth = std::numeric_limits<int>::max();
-            std::string regex;
-            std::string path_regex;
-            std::string prefix;
-            std::vector<std::string> paths;
+            std::string regex = {};
+            std::string path_regex = {};
+            std::string prefix = {};
+            std::vector<std::string> paths = {};
 
             bool verbose() const { return (flags & VERBOSE) > 0; }
             bool color() const { return (flags & COLOR) > 0; }

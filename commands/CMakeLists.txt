@@ -93,8 +93,8 @@ include_directories ("${EXTERNAL_DIR}/include/hs")
 include_directories ("${ROOT_DIR}/src")
 
 # Hyperscan
-SET(LIB_HS "${EXTERNAL_DIR}/lib/libhs.a")
-SET(LIB_HS_RUNTIME "${EXTERNAL_DIR}/lib/libhs_runtime.a")
+find_library(LIB_HS libhs.a PATHS "${EXTERNAL_DIR}/lib64/" "${EXTERNAL_DIR}/lib/" NO_DEFAULT_PATH)
+find_library(LIB_HS_RUNTIME libhs_runtime.a PATHS "${EXTERNAL_DIR}/lib64/" "${EXTERNAL_DIR}/lib/" NO_DEFAULT_PATH)
 
 # Build all
 set(CMAKE_INSTALL_PREFIX "$ENV{HOME}")

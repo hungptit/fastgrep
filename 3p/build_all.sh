@@ -27,7 +27,5 @@ pushd src/ioutils/
 popd
 
 printf "Build hyperscan"
-./build_using_cmake.sh hyperscan
+./build_using_cmake.sh hyperscan > /dev/null 
 
-# Copy libraries from lib64 to lib folder.
-cp lib64/*.a lib/
